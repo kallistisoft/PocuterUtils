@@ -62,12 +62,12 @@
 #define COLOR_DARKER(c)		((c >> 1) & 0x00FEFEFE)
 
 /*
-	Use the 'Pocuter' namespace
+	Use the 'PocuterUtil' namespace
 */
-namespace Pocuter {
+namespace PocuterUtil {
 
 /* ------------------------------------------------------------------------------------------------
-	Pocuter::Keyboard() -- Flexible keyboard utility object class
+	Pocuter::Keyboard() -- Flexible keyboard utility class
    ------------------------------------------------------------------------------------------------ */
 class Keyboard {
 	

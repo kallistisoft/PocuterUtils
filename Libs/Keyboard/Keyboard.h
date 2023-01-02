@@ -25,41 +25,41 @@
 #include <Pocuter.h>
 #include <cstring>
 
-#define KEYSET_WIDTH_MAX	12
-#define KEYSET_STRING_MAX	255
-#define KEYSET_BLINK_LEN	250
+#define KEYSET_WIDTH_MAX    12
+#define KEYSET_STRING_MAX   255
+#define KEYSET_BLINK_LEN    250
 
-#define CHARSET_SPACE	'\t'
-#define CHARSET_DELETE	'\r'
-#define CHARSET_ENTER	'\n'
+#define CHARSET_SPACE   '\t'
+#define CHARSET_DELETE  '\r'
+#define CHARSET_ENTER   '\n'
 
-#define CHARSET_NONE	"\r\n"
-#define CHARSET_UPPER	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#define CHARSET_LOWER	"abcdefghijklmnopqrstuvwxyz"
-#define CHARSET_NUMERIC	"0123456789"
-#define CHARSET_SYMBOLS	",./\\;:[]!@#$%^&*()_+<>?`'\"{}|~-="
-#define CHARSET_IPADDR	"." CHARSET_NUMERIC
-#define CHARSET_HEX		CHARSET_NUMERIC "ABCDEF"
+#define CHARSET_NONE    "\r\n"
+#define CHARSET_UPPER   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define CHARSET_LOWER   "abcdefghijklmnopqrstuvwxyz"
+#define CHARSET_NUMERIC "0123456789"
+#define CHARSET_SYMBOLS ",./\\;:[]!@#$%^&*()_+<>?`'\"{}|~-="
+#define CHARSET_IPADDR  "." CHARSET_NUMERIC
+#define CHARSET_HEX     CHARSET_NUMERIC "ABCDEF"
 
-#define KEYSET_CUSTOM	0x00
-#define KEYSET_UPPER	0x01
-#define KEYSET_LOWER	0x02
-#define KEYSET_NUMERIC	0x04
-#define KEYSET_SYMBOLS	0x08
-#define KEYSET_SPACE	0x10
-#define KEYSET_HEX		0x20
-#define KEYSET_IPADDR	0x80
+#define KEYSET_CUSTOM   0x00
+#define KEYSET_UPPER    0x01
+#define KEYSET_LOWER    0x02
+#define KEYSET_NUMERIC  0x04
+#define KEYSET_SYMBOLS  0x08
+#define KEYSET_SPACE    0x10
+#define KEYSET_HEX      0x20
+#define KEYSET_IPADDR   0x80
 
-#define KEYSET_ALPHA			KEYSET_UPPER | KEYSET_LOWER
-#define KEYSET_ALPHA_NUMERIC	KEYSET_ALPHA | KEYSET_NUMERIC
-#define KEYSET_FULL				KEYSET_ALPHA_NUMERIC | KEYSET_SYMBOLS | KEYSET_SPACE
+#define KEYSET_ALPHA            KEYSET_UPPER | KEYSET_LOWER
+#define KEYSET_ALPHA_NUMERIC    KEYSET_ALPHA | KEYSET_NUMERIC
+#define KEYSET_FULL             KEYSET_ALPHA_NUMERIC | KEYSET_SYMBOLS | KEYSET_SPACE
 
 #define ACTION_HOLD_CLICK_A (getInput(BUTTON_A) & HOLD)
 #define ACTION_HOLD_CLICK_B (getInput(BUTTON_B) & HOLD)
 #define ACTION_HOLD_CLICK_C (getInput(BUTTON_C) & HOLD)
 
-#define COLOR_BRIGHTER(c)	(c | 0x00808080 )
-#define COLOR_DARKER(c)		((c >> 1) & 0x00FEFEFE)
+#define COLOR_BRIGHTER(c)   (c | 0x00808080 )
+#define COLOR_DARKER(c)     ((c >> 1) & 0x00FEFEFE)
 
 /*
 	Use the 'PocuterUtil' namespace
@@ -68,7 +68,7 @@ namespace PocuterUtil {
 
 /* ------------------------------------------------------------------------------------------------
 	Pocuter::Keyboard() -- Flexible keyboard utility class
-   ------------------------------------------------------------------------------------------------ */
+------------------------------------------------------------------------------------------------ */
 class Keyboard {
 	
 	private:
@@ -216,17 +216,17 @@ bool Keyboard::getchar() {
 
 	// get display size
 	uint16_t sizeX;
-    uint16_t sizeY;
-    pocuter->Display->getDisplaySize(sizeX, sizeY);
+	uint16_t sizeY;
+	pocuter->Display->getDisplaySize(sizeX, sizeY);
 
 	// clear screen
 	UGUI* gui = pocuter->ugui;	
-    gui->UG_FillFrame(0, 0, sizeX, sizeY, C_BLACK);
-    gui->UG_FontSelect(&FONT_POCUTER_5X7);
+	gui->UG_FillFrame(0, 0, sizeX, sizeY, C_BLACK);
+	gui->UG_FontSelect(&FONT_POCUTER_5X7);
 
 	// draw keyboard label
 	gui->UG_SetForecolor( accentColor );	
-    gui->UG_PutStringSingleLine(0, 0, this->label);
+	gui->UG_PutStringSingleLine(0, 0, this->label);
 
 	// draw keyboard text
 	gui->UG_SetForecolor( systemColor );	
@@ -363,10 +363,10 @@ bool Keyboard::getchar() {
 						octcount++;
 
 				// validate use of '.' char
-				if( curkey == '.' ) {										
-					if( ( textlen == 1 )									 // prevent leading '.' char
-					 || ( textlen >= 2 && this->text[ textlen - 2 ] == '.' ) // prevent double '.' chars					
-					 || ( octcount > 3 )									 // prevent more than four octets
+				if( curkey == '.' ) {
+					if( ( textlen == 1 )									// prevent leading '.' char
+					|| ( textlen >= 2 && this->text[ textlen - 2 ] == '.' ) // prevent double '.' chars
+					|| ( octcount > 3 )										// prevent more than four octets
 					) {
 						// -- remove trailing character --
 						this->text[ --textlen ] = '\0';
@@ -393,14 +393,14 @@ bool Keyboard::getchar() {
 	}
 
 	// update screen
-    pocuter->Display->updateScreen();
+	pocuter->Display->updateScreen();
 
 	// return text changed flag
 	return changed;
 }
 
 /*
-	Close the 'Pocuter' namespace
+	Close the 'PocuterUtil' namespace
 */
 };
 

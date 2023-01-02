@@ -1,12 +1,18 @@
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#ifndef POCUTERUTIL_KEYBOARD_H
+#define POCUTERUTIL_KEYBOARD_H
 
 /*
 	FIDDLE: play with color settings
 	FIDDLE: play with font size??
 	- - - - - - - - - -
+	DONE: Add hostname character set, format '[.]' and restrict leading/trailing '-'
+	DONE: Add negative number support to numeric sub-types
+	- - - - - - - - - -
 	FIXED: Text length overflow bug
 	FIXED: Label length overflow bug
+	REFACTOR: KBD_CHAR_SPACE from TAB to SPACE
+	REFACTOR: CHARSET_ENTER --> KBD_CHAR_RETURN
+	REFACTOR: make '[.,]' formatting default for all types -- what other symbols are hard to read?
 	- - - - - - - - - -
 	DONE: Fast delete	
 	DONE: Fast scroll up/down
@@ -14,6 +20,7 @@
 	DONE: Max length available keyset change	
 	DONE: Refactor CHARSET_ to CHARSET to improve autofill	
 	DONE: Implement blinking char selection
+	DONE: Add 'float' special input type (0-9.), format '[.]' restrict to single '.'
 	- - - - - - - - - -
 	TODO: cancel button (maybe??)
 	TODO: left/right edit keys (maybe??)
@@ -29,26 +36,33 @@
 #define KEYSET_STRING_MAX   255
 #define KEYSET_BLINK_LEN    250
 
-#define CHARSET_SPACE   '\t'
-#define CHARSET_DELETE  '\r'
-#define CHARSET_ENTER   '\n'
+#define KBD_CHAR_SPACE   ' '
+#define KBD_CHAR_DELETE  '\r'
+#define KBD_CHAR_RETURN  '\n'
 
-#define CHARSET_NONE    "\r\n"
-#define CHARSET_UPPER   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#define CHARSET_LOWER   "abcdefghijklmnopqrstuvwxyz"
-#define CHARSET_NUMERIC "0123456789"
-#define CHARSET_SYMBOLS ",./\\;:[]!@#$%^&*()_+<>?`'\"{}|~-="
-#define CHARSET_IPADDR  "." CHARSET_NUMERIC
-#define CHARSET_HEX     CHARSET_NUMERIC "ABCDEF"
+#define CHARSET_NONE     "\r\n"
+#define CHARSET_UPPER    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define CHARSET_LOWER    "abcdefghijklmnopqrstuvwxyz"
+#define CHARSET_NUMERIC  "0123456789"
+#define CHARSET_SYMBOLS  ",./\\;:[]!@#$%^&*()_+<>?`'\"{}|~-="
+#define CHARSET_SPACE    " "
 
-#define KEYSET_CUSTOM   0x00
-#define KEYSET_UPPER    0x01
-#define KEYSET_LOWER    0x02
-#define KEYSET_NUMERIC  0x04
-#define KEYSET_SYMBOLS  0x08
-#define KEYSET_SPACE    0x10
-#define KEYSET_HEX      0x20
-#define KEYSET_IPADDR   0x80
+#define CHARSET_IPADDR   "." CHARSET_NUMERIC
+#define CHARSET_FLOAT	 "." CHARSET_NUMERIC
+#define CHARSET_HOSTNAME CHARSET_LOWER CHARSET_NUMERIC "-."
+#define CHARSET_HEX      CHARSET_NUMERIC "ABCDEF"
+
+#define KEYSET_CUSTOM    0x0000
+#define KEYSET_UPPER     0x0001
+#define KEYSET_LOWER     0x0002
+#define KEYSET_NUMERIC   0x0004
+#define KEYSET_SYMBOLS   0x0008
+#define KEYSET_SPACE     0x0010
+#define KEYSET_HEX       0x0020
+#define KEYSET_FLOAT     0x0040
+#define KEYSET_NEGATIVE  0x0080
+#define KEYSET_HOSTNAME  0x0100
+#define KEYSET_IPADDR    0x0200
 
 #define KEYSET_ALPHA            KEYSET_UPPER | KEYSET_LOWER
 #define KEYSET_ALPHA_NUMERIC    KEYSET_ALPHA | KEYSET_NUMERIC
@@ -75,7 +89,7 @@ class Keyboard {
 		Pocuter *pocuter;
 
 		char label[17];
-		uint keyset;
+		uint16_t keyset;
 
 		char text[ KEYSET_STRING_MAX + 1 ];
 		uint maxlen;
@@ -137,20 +151,37 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 		return;
 	}
 
-	// assign special ip address charset
+	// assign special ip address charset (return)
 	if( keyset & KEYSET_IPADDR ) {
 		strcpy( this->charset, CHARSET_IPADDR CHARSET_NONE );
 		this->maxlen = 15;
 		return;
-	} 
+	}
 
-	// assign special hexadecimal charset
-	if( keyset & KEYSET_HEX ) {
-		strcpy( this->charset, CHARSET_HEX CHARSET_NONE );
+	// assign special hostname charset (return)
+	if( keyset & KEYSET_HOSTNAME ) {
+		strcpy( this->charset, CHARSET_HOSTNAME CHARSET_NONE );
 		return;
 	}
 
-	// build composable character set from keyset bit flags
+	// prepend negative sign to numeric types (fall-through)
+	if( keyset & KEYSET_NEGATIVE ) {
+		strcpy( this->charset, "-" );
+	}
+
+	// assign special hexadecimal charset (return)
+	if( keyset & KEYSET_HEX ) {
+		strcat( this->charset, CHARSET_HEX CHARSET_NONE );
+		return;
+	}
+
+	// assign special float charset (return)
+	if( keyset & KEYSET_FLOAT ) {
+		strcat( this->charset, CHARSET_FLOAT CHARSET_NONE );
+		return;
+	}
+
+	// compose character set from keyset bit flags
 	if( keyset & KEYSET_UPPER )
 		strcat( this->charset, CHARSET_UPPER );
 
@@ -164,7 +195,7 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 		strcat( this->charset, CHARSET_SYMBOLS );
 
 	if( keyset & KEYSET_SPACE )
-		strcat( this->charset, "\t" );
+		strcat( this->charset, " " );
 
 
 	// append end-control characters to charset
@@ -181,6 +212,7 @@ void Keyboard::custom( char *charset ) {
 
 void Keyboard::clear() {
 	this->set((char*)"");
+	this->cursor = 0;
 }
 
 void Keyboard::set( char *newtext ) {
@@ -233,10 +265,12 @@ bool Keyboard::getchar() {
 	uint textlen = strlen( this->text );
 	uint textpos = 0;
 	if( textlen ) {
+		// text fits within screen width
 		if( textlen <= KEYSET_WIDTH_MAX ) {
 			gui->UG_PutStringSingleLine(0, 32, this->text);
 			textpos = gui->UG_StringWidth( this->text );
 		} else {
+			// truncate/scroll text to the left
 			char textfrag[KEYSET_WIDTH_MAX + 1];
 			uint start = textlen - KEYSET_WIDTH_MAX;
 			strncpy(textfrag, this->text + start, KEYSET_WIDTH_MAX);
@@ -251,7 +285,7 @@ bool Keyboard::getchar() {
 	char letter[5];	
 	char curkey;
 
-	// maxlen reached only allow delete and enter
+	// maxlen reached only allow DELETE and RETURN
 	if( textlen == this->maxlen ) {
 		setlen = 2;
 		if( this->cursor % 2 ) {
@@ -275,19 +309,25 @@ bool Keyboard::getchar() {
 		if( index < 0 ) index = setlen + index;
 		for( int i=0; i < 5; i++ ) {
 			
+			// get keyset character
 			char key = this->charset[ (index + i) % setlen ];
 
-			if( key == CHARSET_ENTER ) { strcpy(letter,"[OK]"); }
-			else if( key == CHARSET_SPACE ) { strcpy(letter,"[ ]"); }
-			else if( key == CHARSET_DELETE ) { strcpy(letter,"[<]"); }
-			else if( key == '.' && this->keyset == KEYSET_IPADDR ) { strcpy(letter,"[.]"); }
+			// format keyboard character
+			if( key == KBD_CHAR_RETURN ) { strcpy(letter,"[OK]"); }
+			else if( key == KBD_CHAR_SPACE ) { strcpy(letter,"[ ]"); }
+			else if( key == KBD_CHAR_DELETE ) { strcpy(letter,"[<]"); }
+			else if( key == '-' && (this->keyset & (KEYSET_NEGATIVE|KEYSET_HOSTNAME)) ) { strcpy(letter,"[-]"); }
+			else if( key == '.' ) { strcpy(letter,"[.]"); }
+			else if( key == ',' ) { strcpy(letter,"[,]"); }
 			else {
 				letter[0] = key;
 				letter[1] = '\0';
 			}
 
+			// store selected keyboard character 
 			if( i == 2 ) curkey = key;
 
+			// set hilight/blink color and draw character to screen
 			gui->UG_SetForecolor( i == 2 ? (this->blinking ? accentColor : darkerColor) : systemColor );
 			gui->UG_PutStringSingleLine( textpos + 2, 14+(i*9), letter );
 		}
@@ -311,14 +351,26 @@ bool Keyboard::getchar() {
 	}
 
 	// button: SELECT EVENT
-	if( ACTION_SINGLE_CLICK_C || (ACTION_HOLD_CLICK_C && curkey == CHARSET_DELETE )) {
-		// key: SPACE
-		if( curkey == CHARSET_SPACE ) { 
-			strcat(this->text," "); 
+	if( ACTION_SINGLE_CLICK_C || (ACTION_HOLD_CLICK_C && curkey == KBD_CHAR_DELETE )) {
+
+		// key: RETURN EVENT
+		 if( curkey == KBD_CHAR_RETURN ) { 			
 			changed = true;
+
+			// test: HOSTNAME doesn't end in '-' char
+			if( (this->keyset & KEYSET_HOSTNAME) && textlen && this->text[textlen-1] == '-' ) {
+				// -- remove trailing character --
+				this->text[ --textlen ] = '\0';
+			} 
+			
+			// else: end active keyboard state
+			else {
+				this->active = false;
+			}
 		}
-		// key: DELETE
-		else if( curkey == CHARSET_DELETE ) { 
+
+		// key: DELETE EVENT
+		else if( curkey == KBD_CHAR_DELETE ) { 
 			if( textlen ) {
 				this->scrolling = ACTION_HOLD_CLICK_C;
 				if( !(!this->scrolling && curScrolling) ) {
@@ -333,12 +385,8 @@ bool Keyboard::getchar() {
 				}
 			}
 		}
-		// key: ENTER
-		else if( curkey == CHARSET_ENTER ) { 
-			this->active = false;
-			changed = true;
-		}
-		// key: APPEND
+
+		// key: APPEND EVENT
 		else if( textlen < this->maxlen ){
 			this->text[ textlen ] = curkey;
 			this->text[ ++textlen ] = '\0';
@@ -348,8 +396,79 @@ bool Keyboard::getchar() {
 			if( textlen == this->maxlen )
 				this->cursor = 0;
 
-			// ip address mode auto-formatting
-			if( this->keyset == KEYSET_IPADDR ) {
+			// mode: numeric sub-type negative number handling (fall-through)
+			if( this->keyset & KEYSET_NEGATIVE ) {
+				// restrict usage to one '-' char at begining
+				if( curkey == '-' ) {
+					if( textlen != 1 ) {
+						// -- remove trailing character --
+						this->text[ --textlen ] = '\0';
+						changed = false;					
+					}
+				}
+			}
+
+			// mode: floating point number formatting
+			if( this->keyset & KEYSET_FLOAT ) {
+
+				// count decimal points
+				uint octcount = 0;
+				for(uint i=0; i < textlen; i++)
+					if( this->text[i] == '.' )
+						octcount++;
+				
+				// validate use of '.' char
+				if( curkey == '.' ) {
+					// restrict usage to one '.' char
+					if( octcount > 1 ) {
+						// -- remove trailing character --
+						this->text[ --textlen ] = '\0';
+						changed = false;					
+					}
+
+					// zero prefix decimal input
+					if( textlen == 1 ) {
+						this->text[0] = '0';
+						this->text[1] = '.';
+						this->text[2] = '\0';
+						textlen = 2;
+					}
+
+					// zero prefix negative decimal input
+					else if(textlen == 2 && this->text[0] == '-') {
+						this->text[0] = '-';
+						this->text[1] = '0';
+						this->text[2] = '.';
+						this->text[3] = '\0';
+						textlen = 3;						
+					}
+				}
+			}
+
+			// mode: hostname/domain name formatting
+			else if( this->keyset & KEYSET_HOSTNAME ) {
+				// rule: restrict cant start with '-' or '.' character
+				if( textlen == 1 && (curkey == '-' || curkey == '.') ) {
+					// -- remove trailing character --
+					this->text[ --textlen ] = '\0';
+					changed = false;
+				}
+				// rule: restrict segment cant start with '-' character
+				if( textlen >= 2 && curkey == '-' && this->text[textlen-2] == '.' ) {
+					// -- remove trailing character --
+					this->text[ --textlen ] = '\0';
+					changed = false;
+				}				
+				// rule: no doubles '.' characters
+				if( textlen >= 2 && curkey == '.' && this->text[textlen-2] == '.' ) {
+					// -- remove trailing character --
+					this->text[ --textlen ] = '\0';
+					changed = false;					
+				}
+			}
+
+			// mode: ip address mode auto-formatting
+			else if( this->keyset & KEYSET_IPADDR ) {
 				
 				// test last three chars are digits
 				bool triplet =  isdigit(this->text[textlen - 1]) && 

@@ -2,6 +2,17 @@
 #define POCUTERUTIL_KEYBOARD_H
 
 /*
+	REVIEW: PERIOD + COMMA formating when used with KEYSET_FULL
+	        instead of bordering with [ ] should we instead indent the char?
+			if so refactor current formatting style to only trigger on these
+			key sets: NEGATIVE FLOAT IPADDR HOSTNAME
+	
+	TODO: doc style comments -- import notes from README file
+	TODO: Keyboard-Demo application with three keyabords:
+			* ip-address
+			* alpha + space
+			* color input --> smart keyboard demo with live color square
+
 	FIDDLE: play with color settings
 	FIDDLE: play with font size??
 	- - - - - - - - - -
@@ -21,11 +32,6 @@
 	DONE: Refactor CHARSET_ to CHARSET to improve autofill	
 	DONE: Implement blinking char selection
 	DONE: Add 'float' special input type (0-9.), format '[.]' restrict to single '.'
-	- - - - - - - - - -
-	TODO: cancel button (maybe??)
-	TODO: left/right edit keys (maybe??)
-	^^^^^^^^
-	creates a bunch of edge cases :/
 */
 
 

@@ -1,8 +1,8 @@
 # PocuterUtil::Keyboard -- Flexible Keyboard Utillity Class
 ***
-Jump to: [Hardware Input](#Hardware-Input)
-Jump to: [API Documentation](#PocuterUtil::Keyboard-Class-API) 
-Jump to: [Quick Usage Example](#Quick -Usage-Example)
+- Jump to: [Hardware Input](#hardware-input)
+- Jump to: [API Documentation](#pocuterutilkeyboard-class-api)
+- Jump to: [Quick Usage Example](#quick-usage-example)
 
 ***
 ## Keyboard Features:
@@ -18,29 +18,29 @@ Jump to: [Quick Usage Example](#Quick -Usage-Example)
 
 ***
 ## Pre-Defined Character Set Bit-Flags:
-**// Primitive alphabetic character sets:**
-**KEYSET_UPPER:** Letter characters **'A-Z'**
-**KEYSET_LOWER:** Letter characters **'a-z'**
-**KEYSET_SYMBOLS:** Symbolic characters **'!@#$%...'**
-**KEYSET_SPACE:** Space character **' '**
+- **// Primitive alphabetic character sets:**
+- **KEYSET_UPPER:** Letter characters **'A-Z'**
+- **KEYSET_LOWER:** Letter characters **'a-z'**
+- **KEYSET_SYMBOLS:** Symbolic characters **'!@#$%...'**
+- **KEYSET_SPACE:** Space character **' '**
 
 **// Numeric character sets:**
-**KEYSET_NUMERIC:** Numeric characters **'0-9'**
-**KEYSET_FLOAT:** Numeric characters **'0-9'** and **'.'** symbol
-**KEYSET_HEX:** Hexadecimal characters **'0-9'** and **'A-F'**
-**KEYSET_NEGATIVE:** Meta-flag for enabling negative number input
+- **KEYSET_NUMERIC:** Numeric characters **'0-9'**
+- **KEYSET_FLOAT:** Numeric characters **'0-9'** and **'.'** symbol
+- **KEYSET_HEX:** Hexadecimal characters **'0-9'** and **'A-F'**
+- **KEYSET_NEGATIVE:** Meta-flag for enabling negative number input
 
 **// Complex alphabetic character sets:**
-**KEYSET_ALPHA:** Combination of upper and lower key sets
-**KEYSET_ALPHA_NUMERIC:** Combination of alpha and numeric key sets
-**KEYSET_FULL:** Combintation of alpha, numeric, symbols, and space key sets
+- **KEYSET_ALPHA:** Combination of upper and lower key sets
+- **KEYSET_ALPHA_NUMERIC:** Combination of alpha and numeric key sets
+- **KEYSET_FULL:** Combintation of alpha, numeric, symbols, and space key sets
 
 **// Internet address character sets:**
-**KEYSET_HOSTNAME:** Combination of lowercase alpha numeric key sets and **'-.'** characters
-**KEYSET_IPADDR:** Combination of numeric key set and **'.'** character
+- **KEYSET_HOSTNAME:** Combination of lowercase alpha numeric key sets and **'-.'** characters
+- **KEYSET_IPADDR:** Combination of numeric key set and **'.'** character
 
 **// User-defined character set:**
-**KEYSET_CUSTOM:** Empty keyset; use the ***custom()*** member function to manually set the key set
+- **KEYSET_CUSTOM:** Empty keyset; use the ***custom()*** member function to manually set the key set
 
 
 ***
@@ -54,17 +54,17 @@ Jump to: [Quick Usage Example](#Quick -Usage-Example)
 - **KEYSET_HEX:**  Assigns the hexadecmial key set and ignores all other key set composition flags
 
 ***
-##Custom Key Sets:
+## Custom Key Sets:
 The available key set can be changed at any time by calling the ***custom()*** member function and passing it a string containing the desired keyboard character set. The keyboad will display the provided characters in the order that they are given and will automatically format the SPACE, PERIOD, and COMMA charcters to **'[ ]'** **'[.]'** **'[,]'** respectivley
 
 To aid in creating a user-defined key set there are several #defines that contain common character strings:
 
-**CHARSET_UPPER:** String literal of letter characters **'A-Z'**
-**CHARSET_LOWER:** String literal of letter characters **'a-z'**
-**CHARSET_NUMERIC:** String literal of numeric characters **'0-9'**
-**CHARSET_SYMBOLS:** String literal of symbolic characters **'!@#$%...'**
-**CHARSET_HEX:** String literal of hexadecimal characters **'0-9'** and **'A-F'**
-**CHARSET_SPACE:** String literal of space character **' '**
+- **CHARSET_UPPER:** String literal of letter characters **'A-Z'**
+- **CHARSET_LOWER:** String literal of letter characters **'a-z'**
+- **CHARSET_NUMERIC:** String literal of numeric characters **'0-9'**
+- **CHARSET_SYMBOLS:** String literal of symbolic characters **'!@#$%...'**
+- **CHARSET_HEX:** String literal of hexadecimal characters **'0-9'** and **'A-F'**
+- **CHARSET_SPACE:** String literal of space character **' '**
 
 
 ***
@@ -72,9 +72,9 @@ To aid in creating a user-defined key set there are several #defines that contai
 ***
 **The keyboard input routine *getchar()* uses all three of the hardware buttons on the Pocuter:**
 
-**BUTTON_A: ** Scroll keyboard cursor upwards
-**BUTTON_B: ** Scroll keyboard cursor downwards
-**BUTTON_C: ** Append keyboard character, delete, return
+- **BUTTON_A: ** Scroll keyboard cursor upwards
+- **BUTTON_B: ** Scroll keyboard cursor downwards
+- **BUTTON_C: ** Append keyboard character, delete, return
 
 These buttons can be held to activate auto-scroll and auto-delete behaviours.
 

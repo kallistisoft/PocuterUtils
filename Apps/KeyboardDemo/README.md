@@ -1,7 +1,7 @@
 # PocuterUtil::Keyboard -- Keyboard Demo Application
 **This application is an advanced usage reference for the [PocuterUtil::Keyboard](/Libs/Keyboard) utility class and demonstrates the following concepts:**
 
-- How to use multiple keyboards objects in a single application
+- How to use multiple keyboard objects in a single application
 - How to create a 'smart' keyboard that reacts to user input in real-time
 - General code flow for an application which uses a keyboard
 
@@ -12,4 +12,4 @@
 - **Button B:** Opens an full keyboard with default text
 - **Button C:** Opens an IP address keyboard
 
-**After selecting '[OK]' in a keyboard the resulting text will be displayed at the bottom of the screen**
+**After selecting '[OK]' the resulting text is displayed at the bottom of the screen**

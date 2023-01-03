@@ -44,9 +44,9 @@ void setup() {
 	keyboard_color = new PocuterUtil::Keyboard( pocuter, (char*)"Enter color code", KEYSET_HEX, 6 );
 	keyboard_color->autoupdate = false;
 	
-	// create a keyboard for entering alpha numeric text with space char, limit length to 32 characters + set default text
-	keyboard_text = new PocuterUtil::Keyboard( pocuter, (char*)"Enter text", KEYSET_ALPHA | KEYSET_NUMERIC | KEYSET_SPACE, 32 );
-	keyboard_text->set( (char*)"Hello World" );
+	// create a keyboard for entering full text with space char, limit length to 32 characters + set default text
+	keyboard_text = new PocuterUtil::Keyboard( pocuter, (char*)"Enter text", KEYSET_FULL, 32 );
+	keyboard_text->set( (char*)"Hello World!" );
 	
 	// create a keyboard for entering an ip address
 	keyboard_ip = new PocuterUtil::Keyboard( pocuter, (char*)"Enter ip address", KEYSET_IPADDR );

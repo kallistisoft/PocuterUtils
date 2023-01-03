@@ -1,4 +1,4 @@
-# PocuterUtil::Keyboard -- Flexible Keyboard Utillity Class
+# PocuterUtil::Keyboard -- Flexible Keyboard Utility Class
 - Jump to: [Hardware Input](#hardware-input)
 - Jump to: [API Documentation](#pocuterutilkeyboard-class-api)
 - Jump to: [Quick Usage Example](#quick-usage-example)
@@ -53,8 +53,8 @@
 - **KEYSET_FLOAT:**  Assigns the numeric key set and **'[.]'**, restricts usage of **'[.]'** character and '[0]' prefixes decimal values
 
 
-## Custom Key Sets:
-The available key set can be changed at any time by calling the ***custom()*** member function and passing it a string containing the desired keyboard character set. The keyboad will display the provided characters in the order that they are given and will automatically format the SPACE, PERIOD, and COMMA charcters to **'[ ]'** **'[.]'** **'[,]'** respectivley
+## User-Defined Character Sets:
+The available key set can be changed at any time by calling the ***custom()*** member function and passing it a string containing the desired keyboard character set. The keyboard will display the provided characters in the order that they are given and will automatically format the **' '** SPACE character to **'[ ]'**
 
 To aid in creating a user-defined key set there are several #defines that contain common character strings:
 
@@ -63,7 +63,7 @@ To aid in creating a user-defined key set there are several #defines that contai
 - **CHARSET_NUMERIC:** String literal of numeric characters **'0-9'**
 - **CHARSET_SYMBOLS:** String literal of symbolic characters **'!@#$%...'**
 - **CHARSET_HEX:** String literal of hexadecimal characters **'0-9'** and **'A-F'**
-- **CHARSET_SPACE:** String literal of space character **' '**
+- **CHARSET_SPACE:** String literal of the SPACE character **' '**
 
 
 ***
@@ -75,7 +75,7 @@ To aid in creating a user-defined key set there are several #defines that contai
 - **BUTTON_B:** Scroll keyboard cursor downwards
 - **BUTTON_C:** Append keyboard character, delete, return
 
-These buttons can be held to activate auto-scroll and auto-delete behaviours.
+These buttons can be held to activate auto-scroll and auto-delete behaviors.
 
 It is the calling application's responsibility to call the Pocuter-OS ***updateInput()*** function to update the button states.
 
@@ -93,7 +93,7 @@ bool active;
 // auto-update display (default: true)
 bool autoupdate;
 
-// instaniate keyboard object
+// instantiate keyboard object
 Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
 
 // assign custom key set
@@ -131,7 +131,7 @@ PocuterUtil::Keyboard(
 
 **If you are going to use a user-defined key set it is recommended that you pass the custom key set flag: KEYSET_CUSTOM, unless you also need to invoke one of the builtin special input processing modes: IPADDR, HOSTNAME, FLOAT**
 
-**It is recommened to create a seperate keyboard object for each input field in your application. Doing so makes getting/setting the field values much simpler and doesn't require storing the field value in a seperate non-volatile variable.**
+**It is recommend to create a separate keyboard object for each input field in your application. Doing so makes getting/setting the field values much simpler and doesn't require storing the field value in a separate non-volatile variable.**
 
 **Example invocations:**
 ```C
@@ -202,9 +202,9 @@ This function sets the keyboard text by copying the value from ****newtext*** up
 ```C
 char* get();
 ```
-This function returns a raw pointer to the keyboard text buffer. This pointer can be used to directly modify the contents of the keyboard text buffer. Subesquent calls to ***getchar()*** can/will modify this value. It is the application's responsibility to copy this value to a non-volitile memory location if persistence is required.
+This function returns a raw pointer to the keyboard text buffer. This pointer can be used to directly modify the contents of the keyboard text buffer. Subsequent calls to ***getchar()*** can/will modify this value. It is the application's responsibility to copy this value to a non-volatile memory location if persistence is required.
 
-**THIS FUNCTION DOES NOT PERFORM NUMERIC TYPE CONVERTION** -- It is the application's responsibility to perform numeric type convertion when calling ***set()*** or ***get()*** respectivly
+**THIS FUNCTION DOES NOT PERFORM NUMERIC TYPE CONVERTION** -- It is the application's responsibility to perform numeric type convertion when calling ***set()*** or ***get()*** respectively
 ***
 ### bool getchar(): Process keyboard display and input
 ```C
@@ -230,10 +230,13 @@ See the source code of the [Keyboard Demo Application](Apps/KeyboardDemo) for ad
 PocuterUtil::Keyboard *keyboard;
 
 void setup() {
-    // initalize pocuter system object
+    // initialize pocuter system object
     pocuter = new Pocuter();
     
-    // create new keyboard using pocuter object, custom label text, combined key set flags, and default length (MAX)
+    // create new keyboard using pocuter object
+    //  set custom label text
+    //  combine key set flags == upper+lower case and space character
+    //  use default length (MAX: 255)
     keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"This is a label", KEYSET_ALPHA | KEYSET_SPACE );
     
     // set default value for keyboard text

@@ -5,15 +5,9 @@
 #define POCUTERUTIL_KEYBOARD_H
 
 /*
-	FIDDLE: play with color settings
-	FIDDLE: play with font size??
+	FIDDLE: play with color settings (NOPE)
+	FIDDLE: play with font size?? (NOPE)
 	- - - - - - - - - -
-	REVIEW: PERIOD + COMMA formatting when used with KEYSET_FULL
-	        instead of bordering with [ ] should we instead indent the char?
-			--
-			if so refactor current formatting style to only trigger on these
-			key sets: NEGATIVE FLOAT IPADDR HOSTNAME
-
 	TODO: doc style comments -- import notes from README file
 	- - - - - - - - - -	
 	DONE: Keyboard-Demo application with three keyboards:
@@ -56,7 +50,7 @@
 #define CHARSET_UPPER    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define CHARSET_LOWER    "abcdefghijklmnopqrstuvwxyz"
 #define CHARSET_NUMERIC  "0123456789"
-#define CHARSET_SYMBOLS  ",./\\;:[]!@#$%^&*()_+<>?`'\"{}|~-="
+#define CHARSET_SYMBOLS  ",./\\;:[]!@#$%^&*()_+<>?'\"`{}|~-="
 #define CHARSET_SPACE    " "
 
 #define CHARSET_IPADDR   "." CHARSET_NUMERIC
@@ -335,13 +329,14 @@ bool Keyboard::getchar() {
 			// get keyset character
 			char key = this->charset[ (index + i) % setlen ];
 
-			// format keyboard character
+			// format keyboard 'action' characters 
 			if( key == KBD_CHAR_RETURN ) { strcpy(letter,"[OK]"); }
 			else if( key == KBD_CHAR_SPACE ) { strcpy(letter,"[ ]"); }
 			else if( key == KBD_CHAR_DELETE ) { strcpy(letter,"[<]"); }
-			else if( key == '-' && (this->keyset & (KEYSET_NEGATIVE|KEYSET_HOSTNAME)) ) { strcpy(letter,"[-]"); }
-			else if( key == '.' ) { strcpy(letter,"[.]"); }
-			else if( key == ',' ) { strcpy(letter,"[,]"); }
+			// format 'special mode' keyboard characters
+			else if( key == '-' && (this->keyset & (KEYSET_NEGATIVE | KEYSET_HOSTNAME)) ) { strcpy(letter,"[-]"); }
+			else if( key == '.' && (this->keyset & (KEYSET_FLOAT | KEYSET_HOSTNAME | KEYSET_IPADDR))) { strcpy(letter,"[.]"); }
+			// alpha-numeric key, no formatting
 			else {
 				letter[0] = key;
 				letter[1] = '\0';

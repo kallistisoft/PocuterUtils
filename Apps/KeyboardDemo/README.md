@@ -9,7 +9,7 @@
 **The application has three keyboards available, which are triggered using the input buttons:**
 
 - **Button A:** Opens a hexadecimal 'smart' keyboard that displays the input as a color swatch in real-time
-- **Button B:** Opens an alpha-numeric keyboard with default text
+- **Button B:** Opens an full keyboard with default text
 - **Button C:** Opens an IP address keyboard
 
 **After selecting '[OK]' in a keyboard the resulting text will be displayed at the bottom of the screen**

@@ -2,7 +2,7 @@
 - Jump to: [Hardware Input](#hardware-input)
 - Jump to: [API Documentation](#pocuterutilkeyboard-class-api)
 - Jump to: [Quick Usage Example](#quick-usage-example)
-- Jump to: [Advanced Usage Example](#quick-usage-example)
+- Jump to: [Advanced Usage Example](Apps/KeyboardDemo)
 ***
 
 
@@ -261,4 +261,4 @@ void loop() {
 
 ***
 # Advanced Usage Example
-See the [Keyboard Demo Application] for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.
+See the [Keyboard Demo Application](Apps/KeyboardDemo) for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.

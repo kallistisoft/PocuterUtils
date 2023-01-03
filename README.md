@@ -6,18 +6,19 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 
 ***
 
-## Developer Utilities
+## Developer Tools
 
-**convert-icon.sh** is a utility for converting images to base64 strings suitable for inclusion in Pocuter App metadata files
+**[convert-icon.sh](Tools/)**<br/>Utility for converting images to base64 strings suitable for inclusion in Pocuter App metadata files
 
 
 ***
 
 ## Utility Libraries
-***Keyboard*** is a utility class for quickly implementing a keyboard interface. It supports compossible character sets, special handling for numeric, float, ip address, and hostname input. It also supports user-defined character sets and post-processing flag for creating 'smart' keyboards
+***[PocuterUtil::Keyboard](Libs/Keyboard)***<br/>Utility class for quickly implementing a keyboard interface. It supports compossible character sets, special handling for numeric, float, ip address, and hostname input. It also supports user-defined character sets and post-processing flag for creating 'smart' keyboards
 
 ***
 
 ## Utility Applications
+**[SDCardUtil](Apps/SDCardUtil)**<br/>A Pocuter application for mounting/unmounting the sd card while the system is running (*requires pocuter library fork*)
 
-**SDCardUtil** is a Pocuter application for mounting/unmounting the sd card while the system is running (*requires pocuter library fork*)
+**[KeyboardDemo](Apps/KeyboardDemo)**<br/>A Pocuter application demonstrating advanced usage of the PocuterUtil::Keyboard object

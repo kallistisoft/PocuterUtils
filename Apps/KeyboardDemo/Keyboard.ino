@@ -1,3 +1,6 @@
+// Copyright 2023 Kallistisoft
+// GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+
 #include <Pocuter.h>
 #include "settings.h"
 #include "system.h"

@@ -2,19 +2,19 @@
 - Jump to: [Hardware Input](#hardware-input)
 - Jump to: [API Documentation](#pocuterutilkeyboard-class-api)
 - Jump to: [Quick Usage Example](#quick-usage-example)
-
+- Jump to: [Advanced Usage Example](#quick-usage-example)
 ***
 
 
 ## Keyboard Features:
-**- Composable keyboard character sets (uppercase,lowercase,numeric,symbols,space,...)
+- Composable keyboard character sets (uppercase,lowercase,numeric,symbols,space,...)
 - Pre-defined character/input modes for common use cases: decimal, float, hex, ip-address, hostname
 - Custom character set; define your own custom character set and ordering
 - Ability to set/edit a pre-existing value
 - User-defined maximum string length
 - Max-length indicated by change in available character set
 - Delete character key; auto-delete by holding select button
-- Auto-scroll character set by holding  up/down button**
+- Auto-scroll character set by holding  up/down button
 
 
 ## Pre-Defined Character Set Bit-Flags:
@@ -44,13 +44,13 @@
 
 
 ## Special Input Modes:
-**The following keyset flags will trigger special behaviour:**
+**The following keyset flags will trigger special input behaviour:**
 
-- **KEYSET_IPADDR:** Assigns the ip address key set, sets the max string  length to 15 characters, and enables auto-formatting of address octets
-- **KEYSET_HOSTNAME:**  Assigns lowercase alpha numeric and **'[-.]'** symbols, enables hostname formatting restrictions
+- **KEYSET_IPADDR:** Assigns the ip address key set, sets the max string length to 15 characters, and enables auto-formatting of address octets
+- **KEYSET_HOSTNAME:**  Assigns lowercase alpha-numeric and **'[-.]'** symbols, enables hostname formatting restrictions
+
 - **KEYSET_NEGATIVE:** Numeric type modifier that adds '[-]' MINUS character and enables negative number formatting restrictions
-- **KEYSET_FLOAT:**  Assigns the numeric key set and **'[.]'**, restricts input to only one **'[.]'** character per string
-- **KEYSET_HEX:**  Assigns the hexadecmial key set and ignores all other key set composition flags
+- **KEYSET_FLOAT:**  Assigns the numeric key set and **'[.]'**, restricts usage of **'[.]'** character and '[0]' prefixes decimal values
 
 
 ## Custom Key Sets:
@@ -90,6 +90,9 @@ The keyboard does not implement any form of cancel event; it is up to the callin
 // keyboard 'in-use' flag
 bool active;
 
+// auto-update display (default: true)
+bool autoupdate;
+
 // instaniate keyboard object
 Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
 
@@ -108,27 +111,49 @@ bool getchar();
 ##  Class Constructor:
 ```C
 PocuterUtil::Keyboard( 
-	/* pocuter system object */
-	Pocuter *pocuter,
-	
-	/* keyboard display label (max length: 16) */
-	char *label,
-	
-	/* key set flags, default all characters */
-	uint keyset = KEYSET_FULL,
-	
-		/* keyboard text length, deault max: 255 */
-	uint maxlen = KEYSET_STRING_MAX
+    /* pocuter system object */
+    Pocuter *pocuter,
+    
+    /* keyboard display label (max length: 16) */
+    char *label,
+    
+    /* key set flags, default is all characters */
+    uint keyset = KEYSET_FULL,
+    
+    /* keyboard text length, default isis  max: 255 */
+    uint maxlen = KEYSET_STRING_MAX
 );
 ```
 
-**Instantiate a new keyboard object by passing the pocuter system object, a display label string, and optional compossible character set flags, and maximum keyboard text size.**
+**Instantiate a new keyboard object by passing the pocuter system object, a display label string, (optional) compossible character set bit-flags, and (optional) maximum keyboard text size.**
 
-**Multiple key set flags can be combined using OR '|' to create custom keyboard character set; example lowercase letters and the space character would be: (KEYSET_LOWER | KEYSET_SPACE)**
+**Multiple key set flags can be combined using OR '|' to create a custom keyboard character set; example lowercase letters and the space character would be: (KEYSET_LOWER | KEYSET_SPACE)**
 
 **If you are going to use a user-defined key set it is recommended that you pass the custom key set flag: KEYSET_CUSTOM, unless you also need to invoke one of the builtin special input processing modes: IPADDR, HOSTNAME, FLOAT**
 
 **It is recommened to create a seperate keyboard object for each input field in your application. Doing so makes getting/setting the field values much simpler and doesn't require storing the field value in a seperate non-volatile variable.**
+
+Example invocations:
+```C
+// create keyboard for entry of floating point number, allow negative values, limit to 12 characters
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter float value", KEYSET_FLOAT | KEYSET_NEGATIVE, 12 );
+
+// create keyboard for entry of hexadecimal number limit to 6 characters
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter color code", KEYSET_HEX, 6 );
+
+// create keyboard for entry of ip address
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter IP Address", KEYSET_IPADDR );
+
+// create keyboard for entry of upper/lower case text without spaces, limit to 32 characters
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter Text", KEYSET_ALPHA, 32 );
+
+// create keyboard for entry of upper/lower case text and allow spaces, limit to 32
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter Text", KEYSET_ALPHA | KEYSET_SPACE, 32 );
+
+// create keyboard for entry of lower case text and numbers, no spaces, maximum size (255 chars)
+new PocuterUtil::Keyboard( pocuter, (char*)"Enter Text", KEYSET_LOWER | KEYSET_NUMERIC );
+```
+
 ***
 ### void custom( char *charset ):  Set user defined keyboard character set
 	void custom( char *charset );
@@ -154,6 +179,12 @@ bool active;
 This member variable tracks the in-use state of the keyboard. It automatically set to true when calling Keyboard::getchar() and is set to false when the user selects the '[OK]' option from the keyboard.
 
 This variable is fully exposed and is usefull for manually managing keyboard flow control, see [Quick Usage Example](#Quick -Usage-Example) section for flow control implementation.
+***
+### bool autoupdate: Automatically update display
+```C
+bool autoupdate = true;
+```
+This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application] for a usage example.
 ***
 ### void clear(): Clear keyboard text
 ```C
@@ -188,42 +219,46 @@ The function returns a boolean flag indicating that the contents of the keyboard
 If doing custom post-processing be sure to check the value of the ***bool active*** flag as the **'[OK]'** event triggers a truthy return of the ***getchar()*** function.
 
 ***
-# Quick  Usage Example
+# Quick Usage Example
 ```C
 #include "Keyboard.h"
 
 PocuterUtil::Keyboard *keyboard;
 
 void setup() {
-	// initalize pocuter system object
-	pocuter = new Pocuter();
-	
-	// create new keyboard using pocuter object, custom label text, combined key set flags, and default length (MAX)
-	keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"Enter some text", KEYSET_ALPHA | KEYSET_SPACE );
-	
-	// set default value for keyboard text
-	keyboard->set( (char*) "This is the default value" );
-	...
+    // initalize pocuter system object
+    pocuter = new Pocuter();
+    
+    // create new keyboard using pocuter object, custom label text, combined key set flags, and default length (MAX)
+    keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"Enter some text", KEYSET_ALPHA | KEYSET_SPACE );
+    
+    // set default value for keyboard text
+    keyboard->set( (char*) "This is the default value" );
+    ...
 }
 
 void loop() {
-	// UPDATE BUTTON INPUT STATE -- MUST BE CALLED BY THE APPLICATION
-	updateInput();
-	
-	// process keyboard display and input
-	if( keyboard->active ) {
-		keyboard->getchar();
-		return;
-	}
-	
-	if( /* trigger event for activating keyboard */ ) {
-		keyboard->active = true;
-	}
-	
-	...
-	
-	// display keyboard text value
-	gui->UG_PutStringSingleLine(0, 0, keyboard->get() );
-	pocuter->Display->updateScreen();
+    // UPDATE BUTTON INPUT STATE -- MUST BE CALLED BY THE APPLICATION
+    updateInput();
+    
+    // process keyboard display and input
+    if( keyboard->active ) {
+        keyboard->getchar();
+        return;
+    }
+    
+    if( /* trigger event for activating keyboard */ ) {
+        keyboard->active = true;
+    }
+    
+    ...
+    
+    // display keyboard text value
+    gui->UG_PutStringSingleLine(0, 0, keyboard->get() );
+    pocuter->Display->updateScreen();
 }
 ```
+
+***
+# Advanced Usage Example
+See the [Keyboard Demo Application] for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.

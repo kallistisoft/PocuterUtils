@@ -2,19 +2,21 @@
 #define POCUTERUTIL_KEYBOARD_H
 
 /*
-	REVIEW: PERIOD + COMMA formating when used with KEYSET_FULL
+	FIDDLE: play with color settings
+	FIDDLE: play with font size??
+	- - - - - - - - - -
+	REVIEW: PERIOD + COMMA formatting when used with KEYSET_FULL
 	        instead of bordering with [ ] should we instead indent the char?
+			--
 			if so refactor current formatting style to only trigger on these
 			key sets: NEGATIVE FLOAT IPADDR HOSTNAME
-	
+
 	TODO: doc style comments -- import notes from README file
-	TODO: Keyboard-Demo application with three keyabords:
+	- - - - - - - - - -	
+	DONE: Keyboard-Demo application with three keyboards:
 			* ip-address
 			* alpha + space
 			* color input --> smart keyboard demo with live color square
-
-	FIDDLE: play with color settings
-	FIDDLE: play with font size??
 	- - - - - - - - - -
 	DONE: Add hostname character set, format '[.]' and restrict leading/trailing '-'
 	DONE: Add negative number support to numeric sub-types
@@ -24,6 +26,7 @@
 	REFACTOR: KBD_CHAR_SPACE from TAB to SPACE
 	REFACTOR: CHARSET_ENTER --> KBD_CHAR_RETURN
 	REFACTOR: make '[.,]' formatting default for all types -- what other symbols are hard to read?
+	REFACTOR: make [OK] the default cursor position on reset	
 	- - - - - - - - - -
 	DONE: Fast delete	
 	DONE: Fast scroll up/down
@@ -81,6 +84,8 @@
 #define COLOR_BRIGHTER(c)   (c | 0x00808080 )
 #define COLOR_DARKER(c)     ((c >> 1) & 0x00FEFEFE)
 
+#define _KBD_RESET_CURSOR() { this->cursor = strlen(this->charset) - 1; }
+
 /*
 	Use the 'PocuterUtil' namespace
 */
@@ -111,6 +116,7 @@ class Keyboard {
 		
 	public:
 		bool active;
+		bool autoupdate;
 
 		Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
 		
@@ -143,6 +149,7 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	this->active = false;
 	this->maxlen = maxlen ? maxlen : KEYSET_STRING_MAX;
 	this->cursor = 0;
+	this->autoupdate = true;
 	this->scrolling = false;
 	this->lastFrame = micros();
 	this->interval = 0;
@@ -160,6 +167,7 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special ip address charset (return)
 	if( keyset & KEYSET_IPADDR ) {
 		strcpy( this->charset, CHARSET_IPADDR CHARSET_NONE );
+		_KBD_RESET_CURSOR();
 		this->maxlen = 15;
 		return;
 	}
@@ -167,6 +175,7 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special hostname charset (return)
 	if( keyset & KEYSET_HOSTNAME ) {
 		strcpy( this->charset, CHARSET_HOSTNAME CHARSET_NONE );
+		_KBD_RESET_CURSOR();
 		return;
 	}
 
@@ -178,12 +187,14 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special hexadecimal charset (return)
 	if( keyset & KEYSET_HEX ) {
 		strcat( this->charset, CHARSET_HEX CHARSET_NONE );
+		_KBD_RESET_CURSOR();
 		return;
 	}
 
 	// assign special float charset (return)
 	if( keyset & KEYSET_FLOAT ) {
 		strcat( this->charset, CHARSET_FLOAT CHARSET_NONE );
+		_KBD_RESET_CURSOR();
 		return;
 	}
 
@@ -206,6 +217,9 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 
 	// append end-control characters to charset
 	strcat( this->charset, CHARSET_NONE);
+
+	// set default cursor position to '[OK]' 
+	_KBD_RESET_CURSOR();
 }
 
 void Keyboard::custom( char *charset ) {
@@ -213,18 +227,18 @@ void Keyboard::custom( char *charset ) {
 	memset( this->charset, 0, KEYSET_STRING_MAX + 3 );
 	strncpy( this->charset, charset, KEYSET_STRING_MAX );
 	strcat( this->charset, CHARSET_NONE );
-	this->cursor = 0;
+	_KBD_RESET_CURSOR();
 }
 
 void Keyboard::clear() {
 	this->set((char*)"");
-	this->cursor = 0;
+	_KBD_RESET_CURSOR();
 }
 
 void Keyboard::set( char *newtext ) {
 	memset( this->text, 0, KEYSET_STRING_MAX + 1 );
 	strncpy( this->text, newtext, this->maxlen );
-	this->cursor = 0;
+	_KBD_RESET_CURSOR();
 }
 
 char* Keyboard::get() {
@@ -333,7 +347,7 @@ bool Keyboard::getchar() {
 			// store selected keyboard character 
 			if( i == 2 ) curkey = key;
 
-			// set hilight/blink color and draw character to screen
+			// set highlight/blink color and draw character to screen
 			gui->UG_SetForecolor( i == 2 ? (this->blinking ? accentColor : darkerColor) : systemColor );
 			gui->UG_PutStringSingleLine( textpos + 2, 14+(i*9), letter );
 		}
@@ -404,7 +418,7 @@ bool Keyboard::getchar() {
 
 			// mode: numeric sub-type negative number handling (fall-through)
 			if( this->keyset & KEYSET_NEGATIVE ) {
-				// restrict usage to one '-' char at begining
+				// restrict usage to one '-' char at beginning
 				if( curkey == '-' ) {
 					if( textlen != 1 ) {
 						// -- remove trailing character --
@@ -507,7 +521,7 @@ bool Keyboard::getchar() {
 					}
 				}
 
-				// vaildate last octet length <= 3
+				// validate last octet length <= 3
 				else if( triplet && isdigit(this->text[textlen - 4]) ){
 					// -- remove trailing character --
 					this->text[ --textlen ] = '\0';
@@ -518,7 +532,8 @@ bool Keyboard::getchar() {
 	}
 
 	// update screen
-	pocuter->Display->updateScreen();
+	if( this->autoupdate )
+		pocuter->Display->updateScreen();
 
 	// return text changed flag
 	return changed;

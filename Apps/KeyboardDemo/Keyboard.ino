@@ -187,7 +187,7 @@ void loop() {
 	
 	
 	/* *****************************************************************************
-	// 5) User-Application mod*al display and interfaces 
+	// 5) User-Application modal display and interfaces 
 	// ***************************************************************************** */
 	// THIS SPACE LEFT INTENTIONALLY BLANK
 }

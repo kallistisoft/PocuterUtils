@@ -1,51 +1,31 @@
+//
 // Copyright 2023 Kallistisoft
 // GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
-
-#ifndef POCUTERUTIL_KEYBOARD_H
-#define POCUTERUTIL_KEYBOARD_H
-
 /*
-	FIDDLE: play with color settings (NOPE)
-	FIDDLE: play with font size?? (NOPE)
-	- - - - - - - - - -
-	TODO: doc style comments -- import notes from README file
-	- - - - - - - - - -	
-	DONE: Keyboard-Demo application with three keyboards:
-			* ip-address
-			* alpha + space
-			* color input --> smart keyboard demo with live color square
-	- - - - - - - - - -
-	DONE: Add hostname character set, format '[.]' and restrict leading/trailing '-'
-	DONE: Add negative number support to numeric sub-types
-	- - - - - - - - - -
-	FIXED: Text length overflow bug
-	FIXED: Label length overflow bug
-	REFACTOR: KBD_CHAR_SPACE from TAB to SPACE
-	REFACTOR: CHARSET_ENTER --> KBD_CHAR_RETURN
-	REFACTOR: make '[.,]' formatting default for all types -- what other symbols are hard to read?
-	REFACTOR: make [OK] the default cursor position on reset	
-	- - - - - - - - - -
-	DONE: Fast delete	
-	DONE: Fast scroll up/down
-	DONE: IP Address auto-formatting
-	DONE: Max length available keyset change	
-	DONE: Refactor CHARSET_ to CHARSET to improve autofill	
-	DONE: Implement blinking char selection
-	DONE: Add 'float' special input type (0-9.), format '[.]' restrict to single '.'
+* [PocuterUtils]/Libs/Keyboard/Keyboard.h
+* 
+* PocuterUtils::Keyboard -- Pocuter Utility Class for Flexible Keyboard Input
+*
+* See README.md file for details, examples, and usage guide
 */
 
+#ifndef _POCUTERUTIL_KEYBOARD_H_
+#define _POCUTERUTIL_KEYBOARD_H_
 
 #include <Pocuter.h>
 #include <cstring>
 
+// local: max length constraints
 #define KEYSET_WIDTH_MAX    12
 #define KEYSET_STRING_MAX   255
 #define KEYSET_BLINK_LEN    250
 
+// local: special format keys
 #define KBD_CHAR_SPACE   ' '
 #define KBD_CHAR_DELETE  '\r'
 #define KBD_CHAR_RETURN  '\n'
 
+// global: character set primitive strings
 #define CHARSET_NONE     "\r\n"
 #define CHARSET_UPPER    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define CHARSET_LOWER    "abcdefghijklmnopqrstuvwxyz"
@@ -53,46 +33,55 @@
 #define CHARSET_SYMBOLS  ",./\\;:[]!@#$%^&*()_+<>?'\"`{}|~-="
 #define CHARSET_SPACE    " "
 
+// global: character set complex strings
 #define CHARSET_IPADDR   "." CHARSET_NUMERIC
 #define CHARSET_FLOAT	 "." CHARSET_NUMERIC
 #define CHARSET_HOSTNAME CHARSET_LOWER CHARSET_NUMERIC "-."
 #define CHARSET_HEX      CHARSET_NUMERIC "ABCDEF"
 
-#define KEYSET_CUSTOM    0x0000
-#define KEYSET_UPPER     0x0001
-#define KEYSET_LOWER     0x0002
-#define KEYSET_NUMERIC   0x0004
-#define KEYSET_SYMBOLS   0x0008
-#define KEYSET_SPACE     0x0010
-#define KEYSET_HEX       0x0020
-#define KEYSET_FLOAT     0x0040
-#define KEYSET_NEGATIVE  0x0080
-#define KEYSET_HOSTNAME  0x0100
-#define KEYSET_IPADDR    0x0200
+// global: key set primitive bit-flags
+#define KEYSET_CUSTOM    0x0000 /**< keyset flag: user-defined */
+#define KEYSET_UPPER     0x0001 /**< keyset flag: upper-case letters */
+#define KEYSET_LOWER     0x0002 /**< keyset flag: lower-case letters */
+#define KEYSET_NUMERIC   0x0004 /**< keyset flag: numerals */
+#define KEYSET_SYMBOLS   0x0008 /**< keyset flag: symbols */
+#define KEYSET_SPACE     0x0010 /**< keyset flag: space character */
+#define KEYSET_HEX       0x0020 /**< keyset flag: hexadecimal */
+#define KEYSET_FLOAT     0x0040 /**< keyset flag: floating-point */
+#define KEYSET_NEGATIVE  0x0080 /**< keyset flag: negative number meta-flag */
+#define KEYSET_HOSTNAME  0x0100 /**< keyset flag: hostname */
+#define KEYSET_IPADDR    0x0200 /**< keyset flag: ip-address */
 
-#define KEYSET_ALPHA            KEYSET_UPPER | KEYSET_LOWER
-#define KEYSET_ALPHA_NUMERIC    KEYSET_ALPHA | KEYSET_NUMERIC
-#define KEYSET_FULL             KEYSET_ALPHA_NUMERIC | KEYSET_SYMBOLS | KEYSET_SPACE
+// global: key set complex bit-flags
+#define KEYSET_ALPHA            KEYSET_UPPER | KEYSET_LOWER   /**< keyset flag: upper+lower letters */
+#define KEYSET_ALPHA_NUMERIC    KEYSET_ALPHA | KEYSET_NUMERIC /**< keyset flag: upper+lower+numeric characters */
+#define KEYSET_FULL             KEYSET_ALPHA_NUMERIC | KEYSET_SYMBOLS | KEYSET_SPACE /**< keyset flag: upper+lower+numeric+symbols+space characters */
 
+// local: button input macros
 #define ACTION_HOLD_CLICK_A (getInput(BUTTON_A) & HOLD)
 #define ACTION_HOLD_CLICK_B (getInput(BUTTON_B) & HOLD)
 #define ACTION_HOLD_CLICK_C (getInput(BUTTON_C) & HOLD)
 
+// local: color formatting macros
 #define COLOR_BRIGHTER(c)   (c | 0x00808080 )
 #define COLOR_DARKER(c)     ((c >> 1) & 0x00FEFEFE)
 
+// local: color formatting macros
 #define _KBD_RESET_CURSOR() { this->cursor = strlen(this->charset) - 1; }
 
-/*
-	Use the 'PocuterUtil' namespace
-*/
-namespace PocuterUtil {
 
-/* ------------------------------------------------------------------------------------------------
-	Pocuter::Keyboard() -- Flexible keyboard utility class
------------------------------------------------------------------------------------------------- */
-class Keyboard {
-	
+// ------------------------------------------------------------------------------------------------
+//
+//	Use the 'PocuterUtil' namespace
+//
+namespace PocuterUtil {
+/**
+* @brief PocuterUtil::Keyboard -- Pocuter Utility Class for Flexible Keyboard Input
+*  
+* @note See README.md file for details, examples, and usage guide
+*/
+// ------------------------------------------------------------------------------------------------
+class Keyboard {	
 	private:
 		Pocuter *pocuter;
 
@@ -112,8 +101,8 @@ class Keyboard {
 		bool blinking;
 		
 	public:
-		bool active;
-		bool autoupdate;
+		bool active;      /**< flag: keyboard 'in-use' */
+		bool autoupdate;  /**< flag: auto-update display */
 
 		Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
 		
@@ -125,7 +114,14 @@ class Keyboard {
 		
 		bool getchar();
 };
-
+/**
+ * @brief Keyboard Constructor
+ * 
+ * @param pocuter pointer to Pocuter system object
+ * @param label keyboard label text
+ * @param keyset character set bit flags
+ * @param maxlen maximum length of keyboard text, must be <= 255
+*/
 Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, uint maxlen = 0 ) {
 	
 	// save reference to pocuter object
@@ -219,6 +215,15 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	_KBD_RESET_CURSOR();
 }
 
+
+/**
+ * @brief set user-defined character set
+ * 
+ * @note resets keyboard cursor position
+ * 
+ * @param charset string containing allowed keyboard characters
+ * 
+*/
 void Keyboard::custom( char *charset ) {
 	this->keyset = KEYSET_CUSTOM;
 	memset( this->charset, 0, KEYSET_STRING_MAX + 3 );
@@ -227,21 +232,48 @@ void Keyboard::custom( char *charset ) {
 	_KBD_RESET_CURSOR();
 }
 
+
+/**
+ * @brief clear keyboard text buffer
+ * 
+ * @note resets keyboard cursor position
+*/
 void Keyboard::clear() {
 	this->set((char*)"");
 	_KBD_RESET_CURSOR();
 }
 
+
+/**
+ * @brief set keyboard text buffer
+ * 
+ * @note resets keyboard cursor position
+*/
 void Keyboard::set( char *newtext ) {
 	memset( this->text, 0, KEYSET_STRING_MAX + 1 );
 	strncpy( this->text, newtext, this->maxlen );
 	_KBD_RESET_CURSOR();
 }
 
+
+/**
+ * @brief get keyboard text buffer
+ * 
+ * @return pointer to keyboard text
+*/
 char* Keyboard::get() {
 	return this->text;
 }
 
+
+/**
+ * @brief display keyboard and handle user input
+ * 
+ * @note the calling application is responsible for updating button state by calling: updateInput()
+ * @note by default the display will auto-update, set the autoupdate member to false to disable this behaviour
+ * 
+ * @return boolean flag indicating if text buffer has changed
+*/
 bool Keyboard::getchar() {
 
 	// calculate blinking effect
@@ -542,4 +574,24 @@ bool Keyboard::getchar() {
 */
 };
 
-#endif
+// undefine internal macros and constants
+#undef KEYSET_WIDTH_MAX
+#undef KEYSET_STRING_MAX
+#undef KEYSET_BLINK_LEN
+
+#undef KBD_CHAR_SPACE
+#undef KBD_CHAR_DELETE
+#undef KBD_CHAR_RETURN
+
+#undef CHARSET_NONE
+
+#undef ACTION_HOLD_CLICK_A
+#undef ACTION_HOLD_CLICK_B
+#undef ACTION_HOLD_CLICK_C
+
+#undef COLOR_BRIGHTER
+#undef COLOR_DARKER
+
+#undef _KBD_RESET_CURSOR
+
+#endif // _POCUTERUTIL_KEYBOARD_H_

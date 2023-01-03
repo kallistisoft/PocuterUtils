@@ -120,7 +120,7 @@ PocuterUtil::Keyboard(
     /* key set flags, default is all characters */
     uint keyset = KEYSET_FULL,
     
-    /* keyboard text length, default isis  max: 255 */
+    /* keyboard text length, default is max: 255 */
     uint maxlen = KEYSET_STRING_MAX
 );
 ```
@@ -133,12 +133,12 @@ PocuterUtil::Keyboard(
 
 **It is recommened to create a seperate keyboard object for each input field in your application. Doing so makes getting/setting the field values much simpler and doesn't require storing the field value in a seperate non-volatile variable.**
 
-Example invocations:
+**Example invocations:**
 ```C
 // create keyboard for entry of floating point number, allow negative values, limit to 12 characters
 new PocuterUtil::Keyboard( pocuter, (char*)"Enter float value", KEYSET_FLOAT | KEYSET_NEGATIVE, 12 );
 
-// create keyboard for entry of hexadecimal number limit to 6 characters
+// create keyboard for entry of hexadecimal number, limit to 6 characters
 new PocuterUtil::Keyboard( pocuter, (char*)"Enter color code", KEYSET_HEX, 6 );
 
 // create keyboard for entry of ip address
@@ -176,15 +176,15 @@ keyboard->custom( (char *)( CHARSET_HEX ":" ))
 ```C
 bool active;
 ```
-This member variable tracks the in-use state of the keyboard. It automatically set to true when calling Keyboard::getchar() and is set to false when the user selects the '[OK]' option from the keyboard.
+This member variable tracks the in-use state of the keyboard. It is automatically set to true when calling ***getchar()*** and is set to false when the user selects the **'[OK]'** option from the keyboard.
 
-This variable is fully exposed and is usefull for manually managing keyboard flow control, see [Quick Usage Example](#Quick -Usage-Example) section for flow control implementation.
+This variable is fully exposed and is usefull for manually managing keyboard flow control, see [Quick Usage Example](#quick-usage-example) section for flow control implementation.
 ***
 ### bool autoupdate: Automatically update display
 ```C
 bool autoupdate = true;
 ```
-This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application] for a usage example.
+This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application](Apps/KeyboardDemo) for a usage example.
 ***
 ### void clear(): Clear keyboard text
 ```C
@@ -210,13 +210,17 @@ This function returns a raw pointer to the keyboard text buffer. This pointer ca
 ```C
 bool getchar()
 ```
-This function displays the keyboard on screen using the current system color and handles all user input. The application MUST call ***updateInput()*** before calling this function! 
+**This function displays the keyboard on screen using the current system color and handles all user input.** **The application MUST call** ***updateInput()*** **before calling this function!**
 
-This function's draw algorithm automatically clears the screen and calls ***pocuter->Display->updateScreen();***. If an application so desires, it can perform additional draw calls afterwards for the purposes of displaying an icon in the label area, or overwriting the label as part of 'smart' keyboard post processing
+This function's draw algorithm automatically clears the screen and calls ***pocuter->Display->updateScreen();*** if the ***autoupdate*** member variable is true (default). 
+
+If an application so desires, it can disable the ***autoupdate*** flag and perform additional draw calls afterwards for example:  displaying an icon in the label area, or overwriting the label as part of 'smart' keyboard post processing.
 
 The function returns a boolean flag indicating that the contents of the keyboard text buffer has changed. This flag can be used to trigger post-processing of the keyboard text to implement a user-defined smart keyboard.
 
 If doing custom post-processing be sure to check the value of the ***bool active*** flag as the **'[OK]'** event triggers a truthy return of the ***getchar()*** function.
+
+See the source code of the [Keyboard Demo Application](Apps/KeyboardDemo) for advanced usage examples.
 
 ***
 # Quick Usage Example
@@ -230,10 +234,11 @@ void setup() {
     pocuter = new Pocuter();
     
     // create new keyboard using pocuter object, custom label text, combined key set flags, and default length (MAX)
-    keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"Enter some text", KEYSET_ALPHA | KEYSET_SPACE );
+    keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"This is a label", KEYSET_ALPHA | KEYSET_SPACE );
     
     // set default value for keyboard text
-    keyboard->set( (char*) "This is the default value" );
+    keyboard->set( (char*) "This is a default value" );
+
     ...
 }
 

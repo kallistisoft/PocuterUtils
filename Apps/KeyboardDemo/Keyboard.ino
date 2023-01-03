@@ -51,7 +51,7 @@ void setup() {
 	// create a keyboard for entering an ip address
 	keyboard_ip = new PocuterUtil::Keyboard( pocuter, (char*)"Enter ip address", KEYSET_IPADDR );
 	
-	// initalize result display text
+	// initialize result display text
 	strcpy( display_text, ">");
 	
 	printf("Keyboard Demo Started...\n");
@@ -86,7 +86,7 @@ void loop() {
 	
 	
 	/* *****************************************************************************
-	// 2) User-Application bac*kground processing routines
+	// 2) User-Application background processing routines
 	// ***************************************************************************** */
 	// THIS SPACE LEFT INTENTIONALLY BLANK
 	

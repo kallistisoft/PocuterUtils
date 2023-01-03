@@ -1,5 +1,5 @@
-# PocuterUtils - Pocuter Utility Library and Applications
-PocuterUtils is a collection of applications and utility library for developing applications for the [Pocuter](https://pocuter.com/pocuter-one)  ecosystem
+# PocuterUtils -- Pocuter Utility Libraries, CLI Tools, and Applications
+PocuterUtils is a collection of applications, command-line tools, and utility libraries for developing software for the [Pocuter](https://pocuter.com/pocuter-one) ecosystem
 
 At this point in time, some of the apps require the [Kallistisoft fork of the Pocuter Library](https://github.com/kallistisoft/PocuterLib) 
 
@@ -14,7 +14,7 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 ***
 
 ## Utility Libraries
-***[PocuterUtil::Keyboard](Libs/Keyboard)***<br/>Utility class for quickly implementing a keyboard interface. It supports compossible character sets, special handling for numeric, float, ip address, and hostname input. It also supports user-defined character sets and post-processing flag for creating 'smart' keyboards
+***[PocuterUtil::Keyboard](Libs/Keyboard)***<br/>Utility class for quickly implementing a keyboard interface. It supports compossible character sets, special handling for numeric, float, ip address, and hostname input. It also supports user-defined character sets and real-time post-processing for creating 'smart' keyboards
 
 ***
 

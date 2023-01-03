@@ -2,7 +2,7 @@
 - Jump to: [Hardware Input](#hardware-input)
 - Jump to: [API Documentation](#pocuterutilkeyboard-class-api)
 - Jump to: [Quick Usage Example](#quick-usage-example)
-- Jump to: [Advanced Usage Example](Apps/KeyboardDemo)
+- Jump to: [Advanced Usage Example](/Apps/KeyboardDemo)
 ***
 
 
@@ -184,7 +184,7 @@ This variable is fully exposed and is usefull for manually managing keyboard flo
 ```C
 bool autoupdate = true;
 ```
-This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application](Apps/KeyboardDemo) for a usage example.
+This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application](/Apps/KeyboardDemo) for a usage example.
 ***
 ### void clear(): Clear keyboard text
 ```C
@@ -220,7 +220,7 @@ The function returns a boolean flag indicating that the contents of the keyboard
 
 If doing custom post-processing be sure to check the value of the ***bool active*** flag as the **'[OK]'** event triggers a truthy return of the ***getchar()*** function.
 
-See the source code of the [Keyboard Demo Application](Apps/KeyboardDemo) for advanced usage examples.
+See the source code of the [Keyboard Demo Application](/Apps/KeyboardDemo) for advanced usage examples.
 
 ***
 # Quick Usage Example
@@ -269,4 +269,4 @@ void loop() {
 
 ***
 # Advanced Usage Example
-See the [Keyboard Demo Application](Apps/KeyboardDemo) for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.
+See the [Keyboard Demo Application](/Apps/KeyboardDemo) for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.

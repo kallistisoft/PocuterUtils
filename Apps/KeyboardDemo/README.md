@@ -1,5 +1,5 @@
 # PocuterUtil::Keyboard -- Keyboard Demo Application
-**This application is an advanced usage reference for the PocuterUtil::Keyboard object and demonstrates the following concepts:**
+**This application is an advanced usage reference for the [PocuterUtil::Keyboard](/Libs/Keyboard) utility class and demonstrates the following concepts:**
 
 - How to use multiple keyboards objects in a single application
 - How to create a 'smart' keyboard that reacts to user input in real-time

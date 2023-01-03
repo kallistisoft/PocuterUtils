@@ -7,7 +7,7 @@
 
 
 ## Keyboard Features:
-- Composable keyboard character sets (uppercase,lowercase,numeric,symbols,space,...)
+- Compossible keyboard character sets (uppercase,lowercase,numeric,symbols,space,...)
 - Pre-defined character/input modes for common use cases: decimal, float, hex, ip-address, hostname
 - Custom character set; define your own custom character set and ordering
 - Ability to set/edit a pre-existing value
@@ -49,14 +49,14 @@
 - **KEYSET_IPADDR:** Assigns the ip address key set, sets the max string length to 15 characters, and enables auto-formatting of address octets
 - **KEYSET_HOSTNAME:**  Assigns lowercase alpha-numeric and **'[-.]'** symbols, enables hostname formatting restrictions
 
-- **KEYSET_NEGATIVE:** Numeric type modifier that adds '[-]' MINUS character and enables negative number formatting restrictions
-- **KEYSET_FLOAT:**  Assigns the numeric key set and **'[.]'**, restricts usage of **'[.]'** character and '[0]' prefixes decimal values
+- **KEYSET_NEGATIVE:** Numeric type modifier that adds **'[-]'** MINUS character and enables negative number formatting restrictions
+- **KEYSET_FLOAT:**  Assigns the numeric key set and **'[.]'**, restricts usage of **'[.]'** character and **'[0]'** prefixes decimal values
 
 
 ## User-Defined Character Sets:
 The available key set can be changed at any time by calling the ***custom()*** member function and passing it a string containing the desired keyboard character set. The keyboard will display the provided characters in the order that they are given and will automatically format the **' '** SPACE character to **'[ ]'**
 
-To aid in creating a user-defined key set there are several #defines that contain common character strings:
+To aid in creating a user-defined key set there are several ***#defines*** that contain common character strings:
 
 - **CHARSET_UPPER:** String literal of letter characters **'A-Z'**
 - **CHARSET_LOWER:** String literal of letter characters **'a-z'**

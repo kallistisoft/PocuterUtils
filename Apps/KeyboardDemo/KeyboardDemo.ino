@@ -62,7 +62,7 @@ void setup() {
 void loop() {
 	
 	/* *****************************************************************************
-	 / / 1) Loop initialization *routines
+	 / / 1) Loop initialization routines
 	 // ***************************************************************************** */
 	dt = (micros() - lastFrame) / 1000.0 / 1000.0;
 	lastFrame = micros();
@@ -92,7 +92,7 @@ void loop() {
 	
 	
 	/* *****************************************************************************
-	// 3) User-Application idl*e state code + input testing
+	// 3) User-Application idle state code + input testing
 	// ***************************************************************************** */
 	// no active keyboards -- display usage text, last entry result, test button inputs
 	if( !(keyboard_color->active | keyboard_text->active | keyboard_ip->active) ) {
@@ -122,7 +122,7 @@ void loop() {
 	
 	
 	/* *****************************************************************************
-	// 4) Active keyboard hand*ling next because the keyboard is a modal interface
+	// 4) Active keyboard handling next because the keyboard is a modal interface
 	// ***************************************************************************** */
 	// text keyboard is active -- test for completed condition and copy text to buffer
 	if( keyboard_text->active ) {

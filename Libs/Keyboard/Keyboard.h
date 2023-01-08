@@ -1,4 +1,4 @@
-//
+	//
 // Copyright 2023 Kallistisoft
 // GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
 /*
@@ -8,6 +8,28 @@
 *
 * See README.md file for details, examples, and usage guide
 */
+
+/*
+	????: change default cursor positioning
+		   0: creation, clear, custom [corner-case]
+		  -1: set, load
+
+	TODO: overload bind so there is an option to change file name
+			bind( config, section, name )
+
+	DEBUG: Dump appID on load
+
+	TODO: Expand README advaced usage examples to include:
+		  simple example for config binding
+		  if( active && getchar && !active ) -- code flow
+		  cancel example using back function
+
+	DONE: add PocuterConfig binding methods
+		  void bind( char *configName, char *section, char *name )
+		  bool load() -- true if config object+value exists
+		  bool save() -- true if config object exists
+*/
+
 
 #ifndef _POCUTERUTIL_KEYBOARD_H_
 #define _POCUTERUTIL_KEYBOARD_H_
@@ -83,19 +105,32 @@ namespace PocuterUtil {
 // ------------------------------------------------------------------------------------------------
 class Keyboard {	
 	private:
+		// Pocuter system object
 		Pocuter *pocuter;
 
+		// Pocuter configuration bindings
+		PocuterConfig *binding;
+		uint8_t *configSection;
+		uint8_t *configName;
+
+		// keyboard label
 		char label[17];
+
+		// keyboard key set+mode flags
 		uint16_t keyset;
 
+		// keyboard text buffer and max-length
 		char text[ KEYSET_STRING_MAX + 1 ];
 		uint maxlen;
 
+		// keyboard character set and cursor position
 		char charset[ KEYSET_STRING_MAX + 3 ];
 		int cursor;
 
+		// auto-scroll state flag
 		bool scrolling;
 
+		// selected chararcter blink state
 		unsigned long lastFrame;
 		unsigned long interval;
 		bool blinking;
@@ -111,7 +146,11 @@ class Keyboard {
 		void clear();
 		void set( char *newtext );
 		char* get();
-		
+
+		bool bind( char *section, char *name, bool autoload );
+		bool load();
+		bool save();
+
 		bool getchar();
 };
 /**
@@ -126,6 +165,11 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	
 	// save reference to pocuter object
 	this->pocuter = pocuter;
+
+	// zero binding pointers
+	this->binding = NULL;
+	this->configSection - NULL;
+	this->configName = NULL;
 
 	// zero buffer memory
 	memset( this->label,   0, 17 );
@@ -240,7 +284,6 @@ void Keyboard::custom( char *charset ) {
 */
 void Keyboard::clear() {
 	this->set((char*)"");
-	_KBD_RESET_CURSOR();
 }
 
 
@@ -263,6 +306,60 @@ void Keyboard::set( char *newtext ) {
 */
 char* Keyboard::get() {
 	return this->text;
+}
+
+
+/**
+ * @brief bind the keyboard to an application configuration setting
+ * 
+ * @note this function uses the configuration name "settings" to maintain compatability with the set/getSetting helper functions included in the BaseApp 
+ * @note existing binding will be replaced on subsequent calls
+ * 
+ * @param section application config section
+ * @param name application config name
+ * @param autoload automatically load bound data -- always returns true
+ * 
+ * @return boolean flag indicating if binding was created
+*/
+bool Keyboard::bind( char *section, char *name, bool autoload = false ) {
+	if( this->binding ) delete binding;
+
+	// verify that valid section and name have been provided
+	if( !(section && strlen(section) && name && strlen(name)) )
+		return false;
+
+	// create configuration object and store section+name pointers
+	this->binding = new PocuterConfig((const uint8_t *) "settings" );
+	this->configSection = (uint8_t*) section;
+	this->configName = (uint8_t*) name;
+	
+	// auto-load bound value
+	if( autoload ) this->load();
+
+	// return true: config setting is bound
+	return true;
+}
+
+/**
+ * @brief load the bound configuration setting into the keyboard buffer
+ * 
+ * @return boolean flag indiciating if a value was loaded
+*/
+bool Keyboard::load() {
+	if( !this->binding || !pocuter->SDCard->cardIsMounted() ) return false;
+	this->binding->get( this->configSection, this->configName, (uint8_t*) this->text, this->maxlen );
+	return( strlen(this->text) > 0 );
+}
+
+/**
+ * @brief save the the keyboard buffer into the bound configuration setting
+ * 
+ * @return boolean flag indiciating if a value was saved
+*/
+bool Keyboard::save() {
+	if( !this->binding || !pocuter->SDCard->cardIsMounted() ) return false;
+	this->binding->set( this->configSection, this->configName, (uint8_t*) this->text );
+	return true;
 }
 
 

@@ -14,7 +14,7 @@
 - User-defined maximum string length
 - Max-length indicated by change in available character set
 - Delete character key; auto-delete by holding select button
-- Auto-scroll character set by holding  up/down button
+- Auto-scroll character set by holding up/down button
 
 
 ## Pre-Defined Character Set Bit-Flags:

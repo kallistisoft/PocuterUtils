@@ -1,7 +1,6 @@
 // Copyright 2023 Kallistisoft
 // GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
 
-#include <Pocuter.h>
 #include "settings.h"
 #include "system.h"
 
@@ -50,11 +49,14 @@ void setup() {
 	
 	// create a keyboard for entering an ip address
 	keyboard_ip = new PocuterUtil::Keyboard( pocuter, (char*)"Enter ip address", KEYSET_IPADDR );
+	keyboard_ip->bind( (char*)"keyboard", (char*)"ip-address", true );
 	
 	// initialize result display text
 	strcpy( display_text, ">");
 	
 	printf("Keyboard Demo Started...\n");
+	
+	//printf("appID: %u\n", PocuterLib::HAL::esp32_c3_OTA::getCurrentAppID() );
 }
 
 
@@ -135,12 +137,13 @@ void loop() {
 		return;
 	}
 	
-	// ip address keyboard is active -- test for completed condition and copy text to buffer
+	// ip address keyboard is active -- test for completed condition, copy text to buffer, and save data
 	if( keyboard_ip->active ) {
 		if( keyboard_ip->getchar() ) {
 			if( !keyboard_ip->active ) {
 				strcpy( display_text, "> ");
 				strcat( display_text, keyboard_ip->get() );
+				keyboard_ip->save();
 			}
 		}
 		return;

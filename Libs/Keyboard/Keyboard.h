@@ -14,20 +14,10 @@
 		   0: creation, clear, custom [corner-case]
 		  -1: set, load
 
-	TODO: overload bind so there is an option to change file name
-			bind( config, section, name )
-
-	DEBUG: Dump appID on load
-
 	TODO: Expand README advaced usage examples to include:
 		  simple example for config binding
 		  if( active && getchar && !active ) -- code flow
 		  cancel example using back function
-
-	DONE: add PocuterConfig binding methods
-		  void bind( char *configName, char *section, char *name )
-		  bool load() -- true if config object+value exists
-		  bool save() -- true if config object exists
 */
 
 
@@ -322,14 +312,30 @@ char* Keyboard::get() {
  * @return boolean flag indicating if binding was created
 */
 bool Keyboard::bind( char *section, char *name, bool autoload = false ) {
+	return this->bind( (char*) "settings", section, name, autoload );
+}
+
+/**
+ * @brief bind the keyboard to an application configuration setting with a custom configuration file name
+ * 
+ * @note existing binding will be replaced on subsequent calls
+ * 
+ * @param configName application config file name
+ * @param section application config section
+ * @param name application config name
+ * @param autoload automatically load bound data -- always returns true
+ * 
+ * @return boolean flag indicating if binding was created
+*/
+bool Keyboard::bind( char *configName, char *section, char *name, bool autoload = false ) {
 	if( this->binding ) delete binding;
 
-	// verify that valid section and name have been provided
-	if( !(section && strlen(section) && name && strlen(name)) )
+	// verify that valid configName, section, and name have been provided
+	if( !(configName && strlen(configName) && section && strlen(section) && name && strlen(name)) )
 		return false;
 
 	// create configuration object and store section+name pointers
-	this->binding = new PocuterConfig((const uint8_t *) "settings" );
+	this->binding = new PocuterConfig((const uint8_t *) configName );
 	this->configSection = (uint8_t*) section;
 	this->configName = (uint8_t*) name;
 	

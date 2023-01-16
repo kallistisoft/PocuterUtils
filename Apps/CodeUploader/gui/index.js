@@ -1,32 +1,20 @@
-// current image file object reference
-let imageFile = null;
-
-let e_image_md5sum = null;
-let e_image_appid = null;
-let e_image_path = null;
-let e_image_size = null;
-
-let e_dropzone = null;
-let e_drop_prompt = null;
-let e_drop_info = null;
-let e_button = null;
-let e_progress = null;
-
-let is_uploading = false;
+const $ = ( id ) => ( document.getElementById( id ) );
 
 function waiting( state ) {
     console.log(`waiting(${state})`);
     if( state ) {
         document.body.style.cursor =
-        e_dropzone.style.cursor = 
-        e_button.style.cursor = 'wait';
+        $('dropzone').style.cursor = 
+        $('button').style.cursor = 'wait';
     } else {
         document.body.style.cursor =
-        e_dropzone.style.cursor = 
-        e_button.style.cursor = null;
+        $('dropzone').style.cursor = 
+        $('button').style.cursor = null;
     }
 }
 
+let imageFile = null;
+let is_uploading = false;
 function UploadFile() {
 
     // test: not currently uploading a file
@@ -58,16 +46,17 @@ function UploadFile() {
     waiting( true );
 
     // update: display element text
-    e_image_appid.innerText = imageFile.appid;
-    e_image_path.innerText = './' + imageFile.fullpath;
-    e_image_size.innerText = `${(imageFile.size / 1024).toFixed(2)} Kib`;
-    e_image_md5sum.innerText = imageFile.md5sum;
+    $('image_appid').innerText = imageFile.appid;
+    $('image_path').innerText = './' + imageFile.fullpath;
+    $('image_size').innerText = `${(imageFile.size / 1024).toFixed(2)} Kib`;
+    $('image_md5sum').innerText = imageFile.md5sum;
+    $('app_name').innerText = imageFile.appName;
 
     // update: display element attributes
-    e_dropzone.setAttribute('loaded','true');    
-    e_button.setAttribute('enabled','true');
-    e_button.style.display = 'none';
-    e_progress.style.display = 'block';
+    $('dropzone').setAttribute('loaded','true');    
+    $('progress_bar').style.display = 'block';
+    $('button').setAttribute('enabled','true');
+    $('button').style.display = 'none';
 
     // create: parameters object
     const params = new FormData();    
@@ -83,7 +72,7 @@ function UploadFile() {
     xreq.upload.onprogress = ( event ) => {
         if (event.lengthComputable) {
             const percentage = Math.round((event.loaded * 100) / event.total);
-            e_progress.value = percentage;
+            $('progress_bar').value = percentage;
             console.log('progress: ',percentage);
         }
     }
@@ -97,9 +86,10 @@ function UploadFile() {
         }
         waiting( false );
         is_uploading = false;
-        e_progress.value = 0;
-        e_button.style.display = 'block';
-        e_progress.style.display = 'none';
+
+        $('progress_bar').value = 0;
+        $('progress_bar').style.display = 'none';
+        $('button').style.display = 'block';
     };
 
     // Initiate a multipart/form-data upload
@@ -110,18 +100,7 @@ function UploadFile() {
 window.onload = () => {
     console.log("window.onload()");
 
-    e_dropzone = document.getElementById('dropzone');  
-    e_drop_prompt = document.getElementById('drop_prompt');
-    e_drop_info = document.getElementById('drop_info');
-
-    e_image_md5sum = document.getElementById('image_md5sum');
-    e_image_appid = document.getElementById('image_appid');
-    e_image_path = document.getElementById('image_path');
-    e_image_size = document.getElementById('image_size');
-
-    e_button = document.getElementById('button');
-
-    e_progress = document.getElementById('progress_bar');
+    const dropzone = $('dropzone');  
 
     window.addEventListener('drop', (event) => { 
         event.preventDefault(); 
@@ -133,26 +112,22 @@ window.onload = () => {
     });
 
     // set: display dragover attribute
-    e_dropzone.ondragenter = e_dropzone.ondragover = (event) => { 
+    dropzone.ondragenter = dropzone.ondragover = (event) => { 
         event.stopPropagation();
         event.preventDefault();
-        if( !event.target == e_dropzone ) return;
-        if( e_dropzone.getAttribute('loaded') === 'true' ) {
-            e_dropzone.setAttribute('dragover','true');
-        }
+        if( !event.target == dropzone ) return;
+        dropzone.setAttribute('dragover','true');
     }
 
     // reset: display dragover attribute
     document.body.ondragenter = (event) => { 
         event.stopPropagation();
         event.preventDefault();
-        if( !event.target == e_dropzone ) return;
-        if( e_dropzone.getAttribute('loaded') === 'true' ) {
-            e_dropzone.setAttribute('dragover','false');
-        }
+        if( !event.target == dropzone ) return;
+        dropzone.setAttribute('dragover','false');
     }
 
-    e_dropzone.ondrop = (event) => {
+    dropzone.ondrop = (event) => {
 
         // clear: drag event state
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -161,17 +136,18 @@ window.onload = () => {
 
         // set: element CSS state attributes
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        e_dropzone.setAttribute('dragover','false');
-        e_dropzone.setAttribute('loaded','false');
-        e_button.setAttribute('enabled','false');        
+        dropzone.setAttribute('dragover','false');
+        dropzone.setAttribute('loaded','false');
+        $('button').setAttribute('enabled','false');        
         
         // reset imageFile and control states
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         imageFile = null;
-        e_image_md5sum.innerText = "";        
-        e_image_appid.innerText = "";
-        e_image_path.innerText = "";
-        e_image_size.innerText = "";
+        $('image_md5sum').innerText = "";        
+        $('image_appid').innerText = "";
+        $('image_path').innerText = "";
+        $('image_size').innerText = "";
+        $('app_name').innerText = "";
 
         // test that only one folder was dropped
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -215,9 +191,9 @@ window.onload = () => {
 
             // dir: iterate sub-folders and recurse
             else if (item.isDirectory) {
-                var dirReader = item.createReader();
+                let dirReader = item.createReader();
                 dirReader.readEntries(function(entries) {
-                    for (var i=0; i<entries.length; i++) {
+                    for (let i=0; i<entries.length; i++) {
                         traverseFileTree(entries[i], path + item.name + "/", depth + 1 );
                     }
                 });
@@ -228,8 +204,8 @@ window.onload = () => {
 
         // get transfer item and walk file tree
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        var items = event.dataTransfer.items;
-        var item = items[0].webkitGetAsEntry();
+        let items = event.dataTransfer.items;
+        let item = items[0].webkitGetAsEntry();
         if (item) {
             is_traversing = true;
             traverseFileTree( item );
@@ -248,15 +224,27 @@ window.onload = () => {
                 return;
             }
 
-            var reader = new FileReader();            
+            let reader = new FileReader();            
             reader.onload = function(event) {
-                var wordArray = CryptoJS.lib.WordArray.create(this.result);
-                var md5 = CryptoJS.MD5(wordArray).toString();
+                let wordArray = CryptoJS.lib.WordArray.create(this.result);
+                let md5 = CryptoJS.MD5(wordArray).toString();
                 imageFile.md5sum = md5;
+                
+                // extract: image file header
+                let head = this.result.slice(48,512);
+                    head = String.fromCharCode.apply(null, new Uint8Array(head));                
 
+                // extract: app name from image file header
+                let matches = head.match(/Name=([\w|\s]+)\r\n/i);
+                if( !matches ) matches = head.match(/Name=([\w|\s]+)\n/i);
+                imageFile.appName = ( matches ? matches[1] : '' );
+                
+                // log: image data to console
                 console.log('md5:', imageFile.md5sum );
                 console.log('size:', imageFile.size );
+                console.log( 'name:', imageFile.appName);
 
+                // upload: processed image file
                 UploadFile();
             };
             reader.readAsArrayBuffer( imageFile );

@@ -393,7 +393,7 @@ window.onload = () => {
 
 	</head>
 	<body>
-		<h2>Code Upload Server - Hoist Test</h2>
+		<h2>Code Upload Server</h2>
 		<div id="controls">
 			<div id="dropzone" loaded="false" >
 				<div id="drop_prompt">

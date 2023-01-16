@@ -6,7 +6,7 @@
 SELF=$(basename $0);
 
 # show: help usage info
-if [[ -z "$1" || "$1" == '--help' ]]; then
+if [[ -z "$1" || "$1" == '--help' || "$1" == '-h' ]]; then
 	echo "USAGE: $SELF FILENAME"
 	exit 1
 fi

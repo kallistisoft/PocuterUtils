@@ -216,7 +216,7 @@ function UploadFile() {
     // is_uploading = true;
     waiting( true );
 
-    const uri = "/update";
+    const uri = "/upload";
     const xhr = new XMLHttpRequest();
     const fd = new FormData();
 

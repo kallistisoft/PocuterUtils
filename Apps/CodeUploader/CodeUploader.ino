@@ -16,11 +16,16 @@ long lastFrame;
 #define CENTER_TEXT(y,text) sizeX/2 - gui->UG_StringWidth(text)/2, y, text
 #define NEXTLINE(text) gui->UG_PutStringSingleLine(0, 18+text_y, text); text_y += 12;
 
-#define WWW_ERRORMSG(...) \
-	printf( "[%s] ", timestamp ); \
+#define REMOVE_TEMPFILE() \
+	if( www_image_file ) fclose( www_image_file ); \
+	if( www_image_file ) remove( www_path_temp );
+
+#define WWW_ERROR(...) \
+	printf( "\n[%s] ", timestamp ); \
 	sprintf( www_error_msg, __VA_ARGS__ ); \
 	printf( "%s\n", www_error_msg ); \
 	delay(10); \
+	REMOVE_TEMPFILE(); \
 	return;
 
 #define LOGMSG( _format_, ... ) \
@@ -109,10 +114,10 @@ void setup() {
 		request->send_P(200, "text/html", index_html );
 	});
 
-	// route: POST /update [appID] [appImage]
+	// route: POST /upload [appID] [appImage]
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	printf("* Creating route for POST /update...\n");
-	server.on("/update", HTTP_POST, 
+	printf("* Creating route for POST /upload...\n");
+	server.on("/upload", HTTP_POST, 
 
 	// POST: Verify uploaded file and launch application
 	//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -124,6 +129,7 @@ void setup() {
 		if( strlen(www_error_msg) ) {
 			LOGMSG("%s", www_error_msg );
 			request->send(200, "text/plain", www_error_msg );
+			www_error_msg[0] = '\0';
 			return;
 		} 
 
@@ -134,8 +140,7 @@ void setup() {
 			request->hasParam("appSize",true) && 
 			request->hasParam("appImage",true,true)) 
 		) {
-			WWW_ERRORMSG("Error: Missing or incorrect request parameters!");
-			if( www_image_file ) remove( www_path_temp );
+			WWW_ERROR("Error: Missing or incorrect request parameters!");
 			request->send(200, "text/plain", www_error_msg );
 			return;
 		}
@@ -152,24 +157,21 @@ void setup() {
 
 		// verify: uploaded file is same size as declared size
 		if( www_image_size != appSize ) {
-			WWW_ERRORMSG("Error: Uploaded file size doesn't match declared file size: %u -> %u", www_image_size, appSize );
-			if( www_image_file ) remove( www_path_temp );
+			WWW_ERROR("Error: Uploaded file size doesn't match declared file size: %u -> %u", www_image_size, appSize );
 			request->send(200, "text/plain", www_error_msg );
 			return;
 		}
 
 		// verify: appImage has a valid size
 		if( www_image_size < 600*1024 ) {
-			WWW_ERRORMSG("Error: Invalid size for upload file (%u) -- must be larger than 600KiB!", www_image_size );
-			if( www_image_file ) remove( www_path_temp );
+			WWW_ERROR("Error: Invalid size for upload file (%u) -- must be larger than 600KiB!", www_image_size );
 			request->send(200, "text/plain", www_error_msg );
 			return;
 		}
 
 		// verify: MD5 hash of uploaded file matches declared MD5 hash
 		if( strcmp( www_image_hash, appMD5 ) != 0 ) {
-			WWW_ERRORMSG("Error: Uploaded MD5 hash doesn't equal declared file hash: %s -> %s", www_image_hash, appMD5 );
-			if( www_image_file ) remove( www_path_temp );
+			WWW_ERROR("Error: Uploaded MD5 hash doesn't equal declared file hash: %s -> %s", www_image_hash, appMD5 );
 			request->send(200, "text/plain", www_error_msg );
 			return;			
 		}
@@ -225,30 +227,30 @@ void setup() {
 			DEBUG_HTTP_REQUEST( request );
 
 			// reset: error message + file pointer\			
-			www_error_msg[0] =
-			www_path_temp[0] =
-			www_path_image[0] =
+			www_error_msg[0]   = '\0';
+			www_path_temp[0]   = '\0';
+			www_path_image[0]  = '\0';
 			www_path_backup[0] = '\0';
-			www_image_hash[0] = '\0';
+			www_image_hash[0]  = '\0';
 			www_image_file = NULL;			
 			www_image_size = 0;
 			md5sum.reset();
 
 			// verify: request has valid appID parameter
 			if( !(request->hasParam("appID",true) ) ) {
-				WWW_ERRORMSG("Error: Missing appID parameter!");
+				WWW_ERROR("Error: Missing appID parameter!");
 			}
 
 			// verify: appID is numeric and >= 2
 			AsyncWebParameter* paramID = request->getParam("appID",true);
 			long appID = strtol( paramID->value().c_str(), &numtest, 10);
 			if( *numtest || appID < 2 ) {
-				WWW_ERRORMSG("Error: appID isn't a number >= 2!");
+				WWW_ERROR("Error: appID isn't a number >= 2!");
 			}
 
 			// verify: appImage filename
 			if( strcmp( image_name, "esp32c3.app" ) != 0 ) {
-				WWW_ERRORMSG( "Error: Invalid name for upload image file!: '%s'", image_name );
+				WWW_ERROR( "Error: Invalid name for upload image file!: '%s'", image_name );
 			}
 
 			// debug: begin writing file to sd card
@@ -260,7 +262,7 @@ void setup() {
 			LOGMSG( " PATH: %s", dirpath );
 			if( !access( dirpath, F_OK) == 0 ) {
 				if( !mkdir( dirpath, S_IRWXU ) == 0 ) {
-					WWW_ERRORMSG( "Error: creating application folder '%s': errno: %u", dirpath, errno );
+					WWW_ERROR( "Error: Creating application folder '%s': errno: %u", dirpath, errno );
 				}
 			}
 
@@ -273,7 +275,7 @@ void setup() {
 			LOGMSG( "WRITE: %s", www_path_temp );
 			www_image_file = fopen( www_path_temp, "w" );
 			if( !www_image_file ) {
-				WWW_ERRORMSG( "Error: opening image file for writting '%s': %u", www_path_temp, errno );
+				WWW_ERROR( "Error: Opening image file for writting '%s': %u", www_path_temp, errno );
 			}
 		}
 
@@ -285,8 +287,7 @@ void setup() {
 			LOGMSG( " DATA: %u bytes", size );
 			long bytes = fwrite( data, 1, size, www_image_file );
 			if( bytes != size ) {
-				WWW_ERRORMSG( "Error: writting file '%s' - block size mismatch: %u -> %u", www_path_temp, size, bytes );
-				fclose( www_image_file );
+				WWW_ERROR( "Error: Writting file '%s' - block size mismatch: %u -> %u", www_path_temp, size, bytes );
 			}
 			www_image_size += size;
 			md5sum.add( data, size );

@@ -3,6 +3,14 @@
 # Copyright 2022 Kallistisoft
 # MIT License -- https://opensource.org/licenses/MIT
 
+#
+# TODO: change options processing to getopts and add -y option
+#
+# Consider using a config file ~/.code-uploader.conf
+#   the config file would contain the environment variables
+#   use eval to import into the script
+#
+
 SELF=$(basename $0);
 IPADDR=$1
 
@@ -10,7 +18,7 @@ IPADDR=$1
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 USAGE=$(cat << EOF
 
-USAGE: $SELF [IP-ADDRESS]
+USAGE: $SELF [-y] [IP-ADDRESS]
 
     This script should be run in your project's root folder.
 
@@ -23,7 +31,10 @@ USAGE: $SELF [IP-ADDRESS]
 
         CODE_UPLOADER_IP_ADDRESS
  
+    If CODE_UPLOADER_IP_ADDRESS is set then the upload
+    confirmation prompt will be skipped.
  
+
 EOF
 );
 
@@ -84,9 +95,9 @@ if [[ ! -e $image ]]; then
     exit 1
 fi
 
-# get: image file statistics - ( MD5, name, size )
+# get: image file statistics - ( name, MD5, size )
+name=$(strings $image | awk 'NR==3,NR==10{ print }' | grep -i Name | awk -F= '{print $2}')
 md5=$(md5sum -b $image | awk '{print $1}') 2>/dev/null
-name=$(awk -F= 'NR==3{ print $2; exit }' $image)
 size=$(wc -c < $image)
 
 
@@ -116,10 +127,12 @@ echo
 
 # confirm: show confirmation dialog
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-read -p "Do you wish to upload this program? [Y/n]: " -n 1 -r REPLY
-echo
-if [[ $REPLY =~ ^[Nn]$ ]]; then
-    exit 2
+if [[ ! -n "$CODE_UPLOADER_IP_ADDRESS" ]]; then
+    read -p "Do you wish to upload this program? [Y/n]: " -n 1 -r REPLY
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        exit 2
+    fi
 fi
 
 # upload: send request to server

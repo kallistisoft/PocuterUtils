@@ -8,11 +8,14 @@ R"rawliteral(
 html {
     font-family: Arial; 
     display: inline-block; 
+    margin: 0px;
+    padding: 0px;
 }
 
 body {
     max-width: 600px; 
-    margin:0px auto; 
+    margin: 0px auto; 
+    padding: 0px auto;
     padding-bottom: 25px;
     background-color: #fff;
 	background: linear-gradient(-45deg, #ee7752, #ee6e9f, #23a6d5, #23d5ab);
@@ -79,7 +82,7 @@ h2 {
     cursor: copy;
 }
 
-#dropzone[loaded="true"] {
+#dropzone[dragover="false"][loaded="true"] {
     cursor: default;
     border-style: solid;
     background-color: rgb(232, 239, 255);
@@ -95,7 +98,7 @@ h2 {
     color: rgb(51, 51, 51);
 }
 
-#dropzone[loaded="true"] #drop_prompt {
+#dropzone[dragover="false"][loaded="true"] #drop_prompt {
     display: none;
 }
 
@@ -109,7 +112,7 @@ h2 {
     transition: color 1.4s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-#dropzone[loaded="true"] #drop_info {
+#dropzone[dragover="false"][loaded="true"] #drop_info {
     display: block;
     color: rgb(95, 110, 199, 1.0);
 }
@@ -121,7 +124,6 @@ h2 {
     margin: 30px;    
     width: 440px;
     text-align: center;
-    cursor: pointer;
 }
 
 
@@ -131,13 +133,9 @@ h2 {
     padding: 10px;   
     text-align: center;
     font-weight: 900;
-
-    border: solid 2px rgb(200, 200, 200);
-    background-color: rgb(252, 252, 252);    
     color: rgb(168, 167, 167);
-}
+    cursor: pointer;
 
-#button {
     backface-visibility: hidden;
     position: relative;
     cursor: pointer;
@@ -151,11 +149,10 @@ h2 {
     color: rgb(217, 252, 206);
     font-weight: 900;
     font-style: normal;
-    text-shadow: 0px -1px 0px rgba(0,0,0,0.4)
+    text-shadow: 0px -1px 0px rgba(0,0,0,0.4);
 
     transition: filter 0.8s cubic-bezier(0.33, 1, 0.68, 1);
     transition: color 0.8s cubic-bezier(0.33, 1, 0.68, 1);
-
 }
 
 #button[enabled="false"] {
@@ -163,6 +160,35 @@ h2 {
     filter: grayscale(95%) opacity(20%);
     color: rgb(1, 77, 7);
     cursor: default;
+}
+
+
+/* progres bar */
+/* -------------------------------------------------------------------------------- */
+#progress_bar::-webkit-progress-bar,
+#progress_bar {
+    background-color: #f3f3f3;
+    border-radius: 8px;
+    border: 1px solid rgb(175, 193, 253);
+    border-width: 1px 1px 1px 1px;
+    width: 100%;
+    height: 43px;
+}
+
+#progress_bar::-webkit-progress-value {
+    background-image:
+    -webkit-linear-gradient(-45deg, 
+                            transparent 33%, rgba(0, 0, 0, .1) 33%, 
+                            rgba(0,0, 0, .1) 66%, transparent 66%),
+    -webkit-linear-gradient(top, 
+                            rgba(255, 255, 255, 0.651), 
+                            rgba(0, 0, 0, .25)),
+    -webkit-linear-gradient(left, #09c, rgb(71, 68, 255));
+    background-size: 60px 33px, 100% 100%, 100% 100%;
+    border-radius: 5px;
+    height: 33px;
+    margin: 1%;
+    max-width: 98%;
 }
 
 </style>
@@ -175,23 +201,30 @@ let e_image_md5sum = null;
 let e_image_appid = null;
 let e_image_path = null;
 let e_image_size = null;
-let e_button = null;
+
 let e_dropzone = null;
+let e_drop_prompt = null;
+let e_drop_info = null;
+let e_button = null;
+let e_progress = null;
+
 let is_uploading = false;
 
 function waiting( state ) {
     console.log(`waiting(${state})`);
     if( state ) {
-        document.body.style.cursor = 'wait';
-        e_dropzone.style.cursor = 'wait';
+        document.body.style.cursor =
+        e_dropzone.style.cursor = 
+        e_button.style.cursor = 'wait';
     } else {
-        document.body.style.cursor = null;
-        e_dropzone.style.cursor = null;
+        document.body.style.cursor =
+        e_dropzone.style.cursor = 
+        e_button.style.cursor = null;
     }
 }
 
 function UploadFile() {
-    
+
     // test: not currently uploading a file
     if( is_uploading ) {
         console.error("UploadFile() - called while in use!");
@@ -200,6 +233,8 @@ function UploadFile() {
 
     // verify: image file exists
     if( imageFile == null ) {
+        waiting( false );
+
         console.error("UploadFile() - called with non-existant imageFile!");
         return;
     }
@@ -207,64 +242,82 @@ function UploadFile() {
     // verify: image file size is reasonable
     if( imageFile.size < 600*1024 ) {
         imageFile == null;
+        waiting( false );
+
         alert("Error image file must be >= 600KiB in size!");
         return;
     }
 
+    // set: uploading state busy flags
     console.log(`Upload: ${imageFile.name}`);
-
-    // is_uploading = true;
+    is_uploading = true;
     waiting( true );
 
-    const uri = "/upload";
-    const xhr = new XMLHttpRequest();
-    const fd = new FormData();
-
-    xhr.open("POST", uri, true);
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            alert(xhr.responseText); // handle response.
-        }
-    };
-
-    // append form data elements
-    fd.append( 'appID', imageFile.appid );
-    fd.append( 'appMD5', imageFile.md5sum );    
-    fd.append( 'appSize', imageFile.size );
-    fd.append( 'appImage', imageFile );
-
-    // update display elements
+    // update: display element text
     e_image_appid.innerText = imageFile.appid;
     e_image_path.innerText = './' + imageFile.fullpath;
     e_image_size.innerText = `${(imageFile.size / 1024).toFixed(2)} Kib`;
     e_image_md5sum.innerText = imageFile.md5sum;
 
+    // update: display element attributes
     e_dropzone.setAttribute('loaded','true');    
     e_button.setAttribute('enabled','true');
+    e_button.style.display = 'none';
+    e_progress.style.display = 'block';
 
-    // Initiate a multipart/form-data upload
-    try {
-        xhr.send(fd);
-    } catch(e) {
-        console.log('Error uploading file:',e);
-        alert('Error uploading file:',e);
+    // create: parameters object
+    const params = new FormData();    
+    params.append( 'appID', imageFile.appid );
+    params.append( 'appMD5', imageFile.md5sum );    
+    params.append( 'appSize', imageFile.size );
+    params.append( 'appImage', imageFile );
+
+    // create: xhr request object
+    const xreq = new XMLHttpRequest();
+
+    // onprogress: update progress bar
+    xreq.upload.onprogress = ( event ) => {
+        if (event.lengthComputable) {
+            const percentage = Math.round((event.loaded * 100) / event.total);
+            e_progress.value = percentage;
+            console.log('progress: ',percentage);
+        }
     }
 
-    console.log('Done uploading file...');
-    waiting( false );
-    is_uploading = false;
+    // onloadend: clear wait state flags and 
+    xreq.onloadend = () => {
+        if( xreq.status === 200 ) {
+            console.log( xreq.responseText );            
+            console.log('Done uploading file...');
+            alert( xreq.responseText );
+        }
+        waiting( false );
+        is_uploading = false;
+        e_progress.value = 0;
+        e_button.style.display = 'block';
+        e_progress.style.display = 'none';
+    };
+
+    // Initiate a multipart/form-data upload
+    xreq.open( "POST", '/upload', true );
+    xreq.send( params );
 }
 
 window.onload = () => {
     console.log("window.onload()");
 
+    e_dropzone = document.getElementById('dropzone');  
+    e_drop_prompt = document.getElementById('drop_prompt');
+    e_drop_info = document.getElementById('drop_info');
+
     e_image_md5sum = document.getElementById('image_md5sum');
     e_image_appid = document.getElementById('image_appid');
     e_image_path = document.getElementById('image_path');
     e_image_size = document.getElementById('image_size');
-    e_dropzone = document.getElementById('dropzone');    
+
     e_button = document.getElementById('button');
 
+    e_progress = document.getElementById('progress_bar');
 
     window.addEventListener('drop', (event) => { 
         event.preventDefault(); 
@@ -275,16 +328,39 @@ window.onload = () => {
         event.preventDefault(); 
     });
 
-    const dropzone = document.getElementById("dropzone");
-    dropzone.ondragover = dropzone.ondragenter = (event) => {
+    // set: display dragover attribute
+    e_dropzone.ondragenter = e_dropzone.ondragover = (event) => { 
         event.stopPropagation();
         event.preventDefault();
+        if( !event.target == e_dropzone ) return;
+        if( e_dropzone.getAttribute('loaded') === 'true' ) {
+            e_dropzone.setAttribute('dragover','true');
+        }
     }
 
-    dropzone.ondrop = (event) => {        
+    // reset: display dragover attribute
+    document.body.ondragenter = (event) => { 
+        event.stopPropagation();
+        event.preventDefault();
+        if( !event.target == e_dropzone ) return;
+        if( e_dropzone.getAttribute('loaded') === 'true' ) {
+            e_dropzone.setAttribute('dragover','false');
+        }
+    }
+
+    e_dropzone.ondrop = (event) => {
+
+        // clear: drag event state
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         event.stopPropagation();
         event.preventDefault();
 
+        // set: element CSS state attributes
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        e_dropzone.setAttribute('dragover','false');
+        e_dropzone.setAttribute('loaded','false');
+        e_button.setAttribute('enabled','false');        
+        
         // reset imageFile and control states
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         imageFile = null;
@@ -292,8 +368,6 @@ window.onload = () => {
         e_image_appid.innerText = "";
         e_image_path.innerText = "";
         e_image_size.innerText = "";
-        e_dropzone.setAttribute('loaded','false');        
-        e_button.setAttribute('enabled','false');
 
         // test that only one folder was dropped
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -330,7 +404,7 @@ window.onload = () => {
                         imageFile.fullpath = path + file.name;
                         imageFile.appid = appid;
                         console.log("id:", imageFile.appid );
-                        console.log("path", imageFile.fullpath );
+                        console.log("path:", imageFile.fullpath );
                     }
                 });
             } 
@@ -373,7 +447,7 @@ window.onload = () => {
             var reader = new FileReader();            
             reader.onload = function(event) {
                 var wordArray = CryptoJS.lib.WordArray.create(this.result);
-                var md5 = CryptoJS.MD5(wordArray);
+                var md5 = CryptoJS.MD5(wordArray).toString();
                 imageFile.md5sum = md5;
 
                 console.log('md5:', imageFile.md5sum );
@@ -395,7 +469,7 @@ window.onload = () => {
 	<body>
 		<h2>Code Upload Server</h2>
 		<div id="controls">
-			<div id="dropzone" loaded="false" >
+			<div id="dropzone" loaded="false" dragover="false">
 				<div id="drop_prompt">
 					Drag your application folder here<br/>
 					to automatically upload a packaged</br>
@@ -416,6 +490,7 @@ window.onload = () => {
 				</div>
 			</div>
 			<div id="upload">
+				<progress id="progress_bar" max="100" value="0" style="display: none"></progress>
 				<div id="button" enabled="false" onclick="UploadFile()">Click here to upload program image</div>
 			</div>
 		</div>

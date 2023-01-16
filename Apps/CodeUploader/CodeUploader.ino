@@ -104,7 +104,7 @@ void setup() {
 	// setup your app here
 	lastFrame = micros();
 
-	printf("\n\nStarting App Uploader...\n");
+	printf("\n\nStarting Code Uploader Application...\n");
 
 	// route: GET /
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -284,7 +284,7 @@ void setup() {
 
 		// write: image data stream
 		if( size != 0 && www_image_file ) {
-			LOGMSG( " DATA: %u bytes", size );
+			//LOGMSG( " DATA: %u bytes", size );
 			long bytes = fwrite( data, 1, size, www_image_file );
 			if( bytes != size ) {
 				WWW_ERROR( "Error: Writting file '%s' - block size mismatch: %u -> %u", www_path_temp, size, bytes );

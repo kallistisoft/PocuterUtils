@@ -17,7 +17,7 @@ PocuterUtil::Keyboard *keyboard_ip;
 UG_COLOR keyboard_color_swatch = C_BLACK;
 char keyboard_color_string[7];
 
-// buffer for last entered keyboard text
+// buffers for last entered keyboard text
 char display_text[32 + 2 + 1];
 
 void setup() {
@@ -47,34 +47,30 @@ void setup() {
 	keyboard_text = new PocuterUtil::Keyboard( pocuter, (char*)"Enter text", KEYSET_FULL, 32 );
 	keyboard_text->set( (char*)"Hello World!" );
 	
-	// create a keyboard for entering an ip address
+	// create a keyboard for entering an ip address and bind it to a configuration setting
 	keyboard_ip = new PocuterUtil::Keyboard( pocuter, (char*)"Enter ip address", KEYSET_IPADDR );
 	keyboard_ip->bind( (char*)"keyboard", (char*)"ip-address", true );
 	
 	// initialize result display text
-	strcpy( display_text, ">");
+	strcpy( display_text, "> ");
 	
 	printf("Keyboard Demo Started...\n");
-	
-	//printf("appID: %u\n", PocuterLib::HAL::esp32_c3_OTA::getCurrentAppID() );
 }
 
-
-
 void loop() {
-	
+
 	/* *****************************************************************************
-	 / / 1) Loop initialization routines
+	 // 1) Loop initialization routines
 	 // ***************************************************************************** */
 	dt = (micros() - lastFrame) / 1000.0 / 1000.0;
 	lastFrame = micros();
 	updateInput();
 	
-	if (ACTION_BACK_TO_MENU) {
+	if( ACTION_BACK_TO_MENU ) {
 		pocuter->OTA->setNextAppID(1);
 		pocuter->OTA->restart();
 	}
-	
+
 	// get display size
 	uint16_t sizeX;
 	uint16_t sizeY;
@@ -97,7 +93,7 @@ void loop() {
 	// 3) User-Application idle state code + input testing
 	// ***************************************************************************** */
 	// no active keyboards -- display usage text, last entry result, test button inputs
-	if( !(keyboard_color->active | keyboard_text->active | keyboard_ip->active) ) {
+	if( !(keyboard_color->active || keyboard_text->active || keyboard_ip->active) ) {
 		
 		// display application label
 		gui->UG_SetForecolor( pocuterSettings.systemColor | 0x00808080 );
@@ -113,15 +109,15 @@ void loop() {
 		gui->UG_PutStringSingleLine(0, 48, display_text );
 		pocuter->Display->updateScreen();
 		
-		// activate selected keyboard from button press
+		// select keyboard from button press
 		if( ACTION_SINGLE_CLICK_A ) keyboard_color->active = true;
 		if( ACTION_SINGLE_CLICK_B ) keyboard_text->active = true;
 		if( ACTION_SINGLE_CLICK_C ) keyboard_ip->active = true;
 		
-		// reset button state
+		// force button state reset by restarting loop()
 		return;
 	}
-	
+
 	
 	/* *****************************************************************************
 	// 4) Active keyboard handling next because the keyboard is a modal interface
@@ -130,8 +126,7 @@ void loop() {
 	if( keyboard_text->active ) {
 		if( keyboard_text->getchar() ) {
 			if( !keyboard_text->active ) {
-				strcpy( display_text, "> ");
-				strcat( display_text, keyboard_text->get() );
+				strcpy( &display_text[2], keyboard_text->get() );
 			}
 		}
 		return;
@@ -141,8 +136,7 @@ void loop() {
 	if( keyboard_ip->active ) {
 		if( keyboard_ip->getchar() ) {
 			if( !keyboard_ip->active ) {
-				strcpy( display_text, "> ");
-				strcat( display_text, keyboard_ip->get() );
+				strcpy( &display_text[2], keyboard_text->get() );
 				keyboard_ip->save();
 			}
 		}
@@ -167,8 +161,7 @@ void loop() {
 				keyboard_color->set( keyboard_color_string );
 				
 				// copy keyboard text to display buffer
-				strcpy( display_text, "> ");
-				strcat( display_text, keyboard_color->get() );
+				strcpy( &display_text[2], keyboard_color->get() );
 			}
 			
 			// input changed -- update color swatch variable

@@ -1,0 +1,159 @@
+html {
+    font-family: Arial; 
+    display: inline-block; 
+}
+
+body {
+    max-width: 600px; 
+    margin:0px auto; 
+    padding-bottom: 25px;
+    background-color: #fff;
+	background: linear-gradient(-45deg, #ee7752, #ee6e9f, #23a6d5, #23d5ab);
+	background-size: 400% 400%;
+	animation: body-gradient 15s ease infinite;
+}
+
+@keyframes body-gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+h2 {
+    color:rgb(51, 51, 51);
+    font-size: 2.5rem;
+    text-align: center;
+    filter: blur(1px);
+    padding: 20px;
+    padding-bottom: 0px;
+    margin: 0px;
+    margin-top: 20px;
+}
+
+#controls {
+    width: 600px;
+    padding: 40px;
+    text-align: center;
+}
+
+/* drop zone */
+/* -------------------------------------------------------------------------------- */
+#dropzone { 
+    width:500px;
+    height:300px;
+
+    
+    border: dashed 5px rgb(200, 200, 200, 0.8);
+    border-radius: 2em;
+    background-color: rgb(252, 252, 252, 0.1);
+
+    box-shadow: inset 0px 1px 0px rgba(255,255,255,1),0px 1px 3px rgba(0,0,0,0.3);
+
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-weight: 900;
+
+    transition: border-color 1.5s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: border-style 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: background-color 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+#dropzone[loaded="true"],
+#dropzone:hover { 
+    border-color: rgb(178, 178, 200);
+    background-color: rgb(240, 240, 240);
+    cursor: copy;
+}
+
+#dropzone[loaded="true"] {
+    cursor: default;
+    border-style: solid;
+    background-color: rgb(232, 239, 255);
+    background: linear-gradient(180deg,rgb(232, 239, 255) 0%,rgb(209, 223, 255) 90%);
+    border-color: rgb(175, 193, 253);
+    transition: background-color 2s cubic-bezier(0.33, 1, 0.68, 1);        
+}
+
+/* upload indicator and controls */
+/* -------------------------------------------------------------------------------- */
+#dropzone #drop_prompt {
+    transition: color 1s ease-out;
+    color: rgb(51, 51, 51);
+}
+
+#dropzone[loaded="true"] #drop_prompt {
+    display: none;
+}
+
+#dropzone:hover #drop_prompt {
+    color: rgb(120, 121, 150);
+}
+
+#drop_info {
+    display: none;    
+    color: rgb(222, 222, 238, 0.0);
+    transition: color 1.4s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+#dropzone[loaded="true"] #drop_info {
+    display: block;
+    color: rgb(95, 110, 199, 1.0);
+}
+
+
+/* upload indicator and controls */
+/* -------------------------------------------------------------------------------- */
+#upload {
+    margin: 30px;    
+    width: 440px;
+    text-align: center;
+    cursor: pointer;
+}
+
+
+/* upload button */
+/* -------------------------------------------------------------------------------- */
+#button {
+    padding: 10px;   
+    text-align: center;
+    font-weight: 900;
+
+    border: solid 2px rgb(200, 200, 200);
+    background-color: rgb(252, 252, 252);    
+    color: rgb(168, 167, 167);
+}
+
+#button {
+    backface-visibility: hidden;
+    position: relative;
+    cursor: pointer;
+    white-space: nowrap;
+    background: linear-gradient(180deg,#fea 0%,#dc8 0%,rgb(146, 197, 98) 100%,#dc8 100%);
+    border-radius: 5px;
+    border: 1px solid #ba6;
+    border-width: 1px 1px 1px 1px;
+    padding: 10px 20px 10px 20px;
+    box-shadow: inset 0px 1px 0px rgba(255,255,255,1),0px 1px 3px rgba(0,0,0,0.3);
+    color: rgb(217, 252, 206);
+    font-weight: 900;
+    font-style: normal;
+    text-shadow: 0px -1px 0px rgba(0,0,0,0.4)
+
+    transition: filter 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: color 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+
+}
+
+#button[enabled="false"] {
+    background: rgb(223, 213, 213);
+    filter: grayscale(95%) opacity(20%);
+    color: rgb(1, 77, 7);
+    cursor: default;
+}

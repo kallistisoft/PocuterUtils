@@ -2,6 +2,7 @@
 **This application is an advanced usage reference for the [PocuterUtil::Keyboard](/Libs/Keyboard) utility class and demonstrates the following concepts:**
 
 - How to use multiple keyboard objects in a single application
+- How to bind a keyboard to a configuration file for data persistance
 - How to create a 'smart' keyboard that reacts to user input in real-time
 - General code flow for an application which uses a keyboard
 

@@ -1,0 +1,40 @@
+<!DOCTYPE HTML><html>
+	<head>
+		<title>Pocuter Application Upload Server</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" href="data:,">
+		<!-- include-start -->
+		<link rel="stylesheet" href="style.css"/>
+		<script src="crypto-js.min.js" defer></script>		
+		<script src="index.js" defer></script>
+		<!-- include-stop -->
+	</head>
+	<body>
+		<h2>Code Upload Server</h2>
+		<div id="controls">
+			<div id="dropzone" loaded="false" >
+				<div id="drop_prompt">
+					Drag your application folder here<br/>
+					to automatically upload a packaged</br>
+					Pocuter program image.
+				</div>
+				<div id="drop_info">
+					<div>File:</div>
+					<div id="image_path"></div>
+					<br/>
+					<div>MD5:</div>
+					<div id="image_md5sum"></div>
+					<br/>
+					<div>Size:</div>
+					<div id="image_size"></div>
+					<br/>
+					<div>ID:</div>
+					<div id="image_appid"></div>						
+				</div>
+			</div>
+			<div id="upload">
+				<div id="button" enabled="false" onclick="UploadFile()">Click here to upload program image</div>
+			</div>
+		</div>
+	</body>	
+</html>

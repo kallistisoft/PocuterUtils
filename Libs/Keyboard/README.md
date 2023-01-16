@@ -10,11 +10,11 @@
 - Compossible keyboard character sets (uppercase,lowercase,numeric,symbols,space,...)
 - Pre-defined character/input modes for common use cases: decimal, float, hex, ip-address, hostname
 - Custom character set; define your own custom character set and ordering
-- Ability to set/edit a pre-existing value
-- User-defined maximum string length
-- Max-length indicated by change in available character set
+- Ability to bind keyboard to a PocuterConfig settings file for persistance
+- User-defined maximum string length with max length indication
 - Delete character key; auto-delete by holding select button
 - Auto-scroll character set by holding up/down button
+- Custom display text color, default is C_LIME
 
 
 ## Pre-Defined Character Set Bit-Flags:
@@ -92,6 +92,9 @@ bool active;
 
 // auto-update display (default: true)
 bool autoupdate;
+
+// display text color (default: C_LIME)
+UG_COLOR color;
 
 // instantiate keyboard object
 Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
@@ -186,6 +189,30 @@ bool autoupdate = true;
 ```
 This member variable enables automatic updating of the screen when calling ***getchar()***. This variable is true by default. Applications that wish to do post-processing of the display can set this to false and then update the screen manually. See the [Keyboard Demo Application](/Apps/KeyboardDemo) for a usage example.
 ***
+### bool color: Keyboard text color
+```C
+UG_COLOR color = C_LIME;
+```
+This member variable holds the keyboard text display color. It is set to the defult system color (C_LIME) on initialization.
+***
+### bool bind( char *section, char *name, bool autoload): Bind the keyboard to a config setting
+```C
+void bind( char *section, char *name, bool autoload=false );
+```
+This function binds the keyboard to a PocuterConfig settings file for data persistance.
+This function automatically uses the config file name ***"settings"*** this is maintain compatability with the ***getSetting(...)*** and ***setSetting (...)*** helper functions included with the BaseApp template file.
+
+Note that the binding functions bind()/load()/save() will not work unless the app has been loaded from an SD card as it requires both SD storage and the unique App ID provided by the menu application loader. 
+
+**At this time the binding functions will not work properly with applications flashed directly to ROM!**
+***
+### bool bind( char *configName, char *section, char *name, bool autoload): Bind the keyboard to a config setting in custom file
+```C
+void bind( char *configName, char *section, char *name, bool autoload=false );
+```
+This function binds the keyboard to a custom PocuterConfig settings file for data persistance.
+This function is incompatible with the ***getSetting(...)*** and ***setSetting (...)*** helper functions included with the BaseApp template file as they expect the config file name to be "settings".
+***
 ### void clear(): Clear keyboard text
 ```C
 void clear();
@@ -210,7 +237,7 @@ This function returns a raw pointer to the keyboard text buffer. This pointer ca
 ```C
 bool getchar()
 ```
-**This function displays the keyboard on screen using the current system color and handles all user input.** **The application MUST call** ***updateInput()*** **before calling this function!**
+**This function displays the keyboard on screen and handles all user input.** **The application MUST call** ***updateInput()*** **before calling this function!**
 
 This function's draw algorithm automatically clears the screen and calls ***pocuter->Display->updateScreen();*** if the ***autoupdate*** member variable is true (default). 
 
@@ -239,8 +266,11 @@ void setup() {
     //  use default length (MAX: 255)
     keyboard = new PocuterUtil::Keyboard( pocuter, (char*)"This is a label", KEYSET_ALPHA | KEYSET_SPACE );
     
-    // set default value for keyboard text
-    keyboard->set( (char*) "This is a default value" );
+    // bind keyboard to the default configuration file (optional)
+    keyboard->bind( (char*) "my_config_section", (char*) "my_config_item" );
+
+    // load saved value otherwise set default value
+    if( !keyboard->load() ) keyboard->set( (char*) "This is a default value" );
 
     ...
 }
@@ -251,7 +281,22 @@ void loop() {
     
     // process keyboard display and input
     if( keyboard->active ) {
-        keyboard->getchar();
+
+        // get next keyboard character
+        if( keyboard->getchar() ) {
+
+            // test if user selected '[OK]'
+            if( !keyboard->active ) {
+                //
+                // perform keyboard closing actions
+                //
+                
+                ...
+
+                // save keyboard value to bound config setting
+                keyboard->save();
+            }
+        }
         return;
     }
     
@@ -269,4 +314,4 @@ void loop() {
 
 ***
 # Advanced Usage Example
-See the [Keyboard Demo Application](/Apps/KeyboardDemo) for advanced usage examples -- How to use multiple keyboards and 'smart' keyboard examples.
+See the [Keyboard Demo Application](/Apps/KeyboardDemo) for advanced usage examples -- How to bind a keyboard to a configuration setting, multiple keyboards, and 'smart' keyboard examples.

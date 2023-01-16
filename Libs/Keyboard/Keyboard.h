@@ -1,4 +1,4 @@
-	//
+//
 // Copyright 2023 Kallistisoft
 // GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
 /*
@@ -8,18 +8,6 @@
 *
 * See README.md file for details, examples, and usage guide
 */
-
-/*
-	????: change default cursor positioning
-		   0: creation, clear, custom [corner-case]
-		  -1: set, load
-
-	TODO: Expand README advaced usage examples to include:
-		  simple example for config binding
-		  if( active && getchar && !active ) -- code flow
-		  cancel example using back function
-*/
-
 
 #ifndef _POCUTERUTIL_KEYBOARD_H_
 #define _POCUTERUTIL_KEYBOARD_H_
@@ -70,17 +58,13 @@
 #define KEYSET_FULL             KEYSET_ALPHA_NUMERIC | KEYSET_SYMBOLS | KEYSET_SPACE /**< keyset flag: upper+lower+numeric+symbols+space characters */
 
 // local: button input macros
-#define ACTION_HOLD_CLICK_A (getInput(BUTTON_A) & HOLD)
-#define ACTION_HOLD_CLICK_B (getInput(BUTTON_B) & HOLD)
-#define ACTION_HOLD_CLICK_C (getInput(BUTTON_C) & HOLD)
+#define ACTION_HOLD_A (getInput(BUTTON_A) & HOLD)
+#define ACTION_HOLD_B (getInput(BUTTON_B) & HOLD)
+#define ACTION_HOLD_C (getInput(BUTTON_C) & HOLD)
 
 // local: color formatting macros
-#define COLOR_BRIGHTER(c)   (c | 0x00808080 )
-#define COLOR_DARKER(c)     ((c >> 1) & 0x00FEFEFE)
-
-// local: color formatting macros
-#define _KBD_RESET_CURSOR() { this->cursor = strlen(this->charset) - 1; }
-
+#define COLOR_BRIGHTER(c)   (c | 0x00808080)
+#define COLOR_DARKER(c)     (c & 0x003F3F3F)
 
 // ------------------------------------------------------------------------------------------------
 //
@@ -129,6 +113,8 @@ class Keyboard {
 		bool active;      /**< flag: keyboard 'in-use' */
 		bool autoupdate;  /**< flag: auto-update display */
 
+		UG_COLOR color;   /**< display text color */
+
 		Keyboard( Pocuter *pocuter, char *label, uint keyset, uint maxlen );
 		
 		void custom( char *charset );
@@ -138,6 +124,7 @@ class Keyboard {
 		char* get();
 
 		bool bind( char *section, char *name, bool autoload );
+		bool bind( char *configName, char *section, char *name, bool autoload );
 		bool load();
 		bool save();
 
@@ -169,6 +156,9 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// copy label string text
 	strncpy( this->label, label, 16 );
 	
+	// set default display color to default system color
+	this->color = C_LIME;
+
 	// validate max text length
 	if( maxlen > KEYSET_STRING_MAX ) maxlen = KEYSET_STRING_MAX;
 
@@ -194,7 +184,6 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special ip address charset (return)
 	if( keyset & KEYSET_IPADDR ) {
 		strcpy( this->charset, CHARSET_IPADDR CHARSET_NONE );
-		_KBD_RESET_CURSOR();
 		this->maxlen = 15;
 		return;
 	}
@@ -202,7 +191,6 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special hostname charset (return)
 	if( keyset & KEYSET_HOSTNAME ) {
 		strcpy( this->charset, CHARSET_HOSTNAME CHARSET_NONE );
-		_KBD_RESET_CURSOR();
 		return;
 	}
 
@@ -214,14 +202,12 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 	// assign special hexadecimal charset (return)
 	if( keyset & KEYSET_HEX ) {
 		strcat( this->charset, CHARSET_HEX CHARSET_NONE );
-		_KBD_RESET_CURSOR();
 		return;
 	}
 
 	// assign special float charset (return)
 	if( keyset & KEYSET_FLOAT ) {
 		strcat( this->charset, CHARSET_FLOAT CHARSET_NONE );
-		_KBD_RESET_CURSOR();
 		return;
 	}
 
@@ -244,9 +230,6 @@ Keyboard::Keyboard( Pocuter *pocuter, char *label, uint keyset = KEYSET_FULL, ui
 
 	// append end-control characters to charset
 	strcat( this->charset, CHARSET_NONE);
-
-	// set default cursor position to '[OK]' 
-	_KBD_RESET_CURSOR();
 }
 
 
@@ -263,7 +246,7 @@ void Keyboard::custom( char *charset ) {
 	memset( this->charset, 0, KEYSET_STRING_MAX + 3 );
 	strncpy( this->charset, charset, KEYSET_STRING_MAX );
 	strcat( this->charset, CHARSET_NONE );
-	_KBD_RESET_CURSOR();
+	this->cursor = 0;
 }
 
 
@@ -285,7 +268,7 @@ void Keyboard::clear() {
 void Keyboard::set( char *newtext ) {
 	memset( this->text, 0, KEYSET_STRING_MAX + 1 );
 	strncpy( this->text, newtext, this->maxlen );
-	_KBD_RESET_CURSOR();
+	this->cursor = strlen(this->charset) - 1;
 }
 
 
@@ -302,7 +285,8 @@ char* Keyboard::get() {
 /**
  * @brief bind the keyboard to an application configuration setting
  * 
- * @note this function uses the configuration name "settings" to maintain compatability with the set/getSetting helper functions included in the BaseApp 
+ * @note this function uses the configuration name "settings" to maintain compatability with the set/getSetting helper functions included with the BaseApp template file
+ * @note the app has to be loaded from the sd card for this function to work as apps flashed directly to rom don't have a unique app id
  * @note existing binding will be replaced on subsequent calls
  * 
  * @param section application config section
@@ -318,6 +302,7 @@ bool Keyboard::bind( char *section, char *name, bool autoload = false ) {
 /**
  * @brief bind the keyboard to an application configuration setting with a custom configuration file name
  * 
+ * @note the app has to be loaded from the sd card for this function to work as apps flashed directly to rom don't have a unique app id
  * @note existing binding will be replaced on subsequent calls
  * 
  * @param configName application config file name
@@ -349,16 +334,22 @@ bool Keyboard::bind( char *configName, char *section, char *name, bool autoload 
 /**
  * @brief load the bound configuration setting into the keyboard buffer
  * 
+ * @note the app has to be loaded from the sd card for this function to work properly as apps flashed directly to rom have a unique app id
+ * 
  * @return boolean flag indiciating if a value was loaded
 */
 bool Keyboard::load() {
 	if( !this->binding || !pocuter->SDCard->cardIsMounted() ) return false;
+
+	this->clear();
 	this->binding->get( this->configSection, this->configName, (uint8_t*) this->text, this->maxlen );
 	return( strlen(this->text) > 0 );
 }
 
 /**
  * @brief save the the keyboard buffer into the bound configuration setting
+ * 
+ * @note the app has to be loaded from the sd card for this function to work properly as apps flashed directly to rom don't have a unique app id
  * 
  * @return boolean flag indiciating if a value was saved
 */
@@ -394,9 +385,8 @@ bool Keyboard::getchar() {
 	this->active = true;
 
 	// get system color and make highlight color
-	UG_COLOR systemColor = pocuterSettings.systemColor;
-	UG_COLOR accentColor = COLOR_BRIGHTER( systemColor );
-	UG_COLOR darkerColor = COLOR_DARKER( systemColor );
+	UG_COLOR accentColor = COLOR_BRIGHTER( this->color );
+	UG_COLOR darkerColor = COLOR_DARKER( this->color );
 
 	// get display size
 	uint16_t sizeX;
@@ -413,7 +403,7 @@ bool Keyboard::getchar() {
 	gui->UG_PutStringSingleLine(0, 0, this->label);
 
 	// draw keyboard text
-	gui->UG_SetForecolor( systemColor );	
+	gui->UG_SetForecolor( this->color );	
 	uint textlen = strlen( this->text );
 	uint textpos = 0;
 	if( textlen ) {
@@ -441,7 +431,7 @@ bool Keyboard::getchar() {
 	if( textlen == this->maxlen ) {
 		setlen = 2;
 		if( this->cursor % 2 ) {
-			gui->UG_SetForecolor( systemColor );
+			gui->UG_SetForecolor( this->color );
 			gui->UG_PutStringSingleLine( textpos + 2, 24, "[<]" );
 			gui->UG_SetForecolor( accentColor );
 			gui->UG_PutStringSingleLine( textpos + 2, 32, "[OK]" );
@@ -449,7 +439,7 @@ bool Keyboard::getchar() {
 		} else {
 			gui->UG_SetForecolor( accentColor );
 			gui->UG_PutStringSingleLine( textpos + 2, 32, "[<]" );
-			gui->UG_SetForecolor( systemColor );
+			gui->UG_SetForecolor( this->color );
 			gui->UG_PutStringSingleLine( textpos + 2, 40, "[OK]" );
 			curkey = '\r';
 		}
@@ -481,7 +471,7 @@ bool Keyboard::getchar() {
 			if( i == 2 ) curkey = key;
 
 			// set highlight/blink color and draw character to screen
-			gui->UG_SetForecolor( i == 2 ? (this->blinking ? accentColor : darkerColor) : systemColor );
+			gui->UG_SetForecolor( i == 2 ? (this->blinking ? accentColor : darkerColor) : this->color );
 			gui->UG_PutStringSingleLine( textpos + 2, 14+(i*9), letter );
 		}
 	}
@@ -490,21 +480,21 @@ bool Keyboard::getchar() {
 	bool curScrolling = this->scrolling;
 
 	// button: UP EVENT
-	if( ACTION_SINGLE_CLICK_A || ACTION_HOLD_CLICK_A ) {
-		this->scrolling = ACTION_HOLD_CLICK_A;
+	if( ACTION_SINGLE_CLICK_A || ACTION_HOLD_A ) {
+		this->scrolling = ACTION_HOLD_A;
 		if( !(!this->scrolling && curScrolling) )
 			this->cursor = (setlen + (this->cursor-1)) % setlen;
 	}
 
 	// button: DOWN EVENT
-	if( ACTION_SINGLE_CLICK_B || ACTION_HOLD_CLICK_B ) {
-		this->scrolling = ACTION_HOLD_CLICK_B;
+	if( ACTION_SINGLE_CLICK_B || ACTION_HOLD_B ) {
+		this->scrolling = ACTION_HOLD_B;
 		if( !(!this->scrolling && curScrolling) )
 			this->cursor = ++this->cursor % setlen;
 	}
 
 	// button: SELECT EVENT
-	if( ACTION_SINGLE_CLICK_C || (ACTION_HOLD_CLICK_C && curkey == KBD_CHAR_DELETE )) {
+	if( ACTION_SINGLE_CLICK_C || (ACTION_HOLD_C && curkey == KBD_CHAR_DELETE )) {
 
 		// key: RETURN EVENT
 		 if( curkey == KBD_CHAR_RETURN ) { 			
@@ -525,7 +515,7 @@ bool Keyboard::getchar() {
 		// key: DELETE EVENT
 		else if( curkey == KBD_CHAR_DELETE ) { 
 			if( textlen ) {
-				this->scrolling = ACTION_HOLD_CLICK_C;
+				this->scrolling = ACTION_HOLD_C;
 				if( !(!this->scrolling && curScrolling) ) {
 
 					// adjust cursor postion if at max len (keep current key)
@@ -688,13 +678,11 @@ bool Keyboard::getchar() {
 
 #undef CHARSET_NONE
 
-#undef ACTION_HOLD_CLICK_A
-#undef ACTION_HOLD_CLICK_B
-#undef ACTION_HOLD_CLICK_C
+#undef ACTION_HOLD_A
+#undef ACTION_HOLD_B
+#undef ACTION_HOLD_C
 
 #undef COLOR_BRIGHTER
 #undef COLOR_DARKER
-
-#undef _KBD_RESET_CURSOR
 
 #endif // _POCUTERUTIL_KEYBOARD_H_

@@ -217,9 +217,18 @@ void setup() {
 	// UPLOAD: File upload request handler -- save streamed file...
 	//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t size, bool final) {
-		const char *image_name = filename.c_str();
+		char image_name[256];
 		char *timestamp = GetCurrentTimeString();
 		char *numtest;
+
+		// get: image file basname (webkit sends basename while firefox sends full path)
+		memset( image_name, 0, 256 );
+		const char *raw_image_name = filename.c_str();
+		if( char *basname = strrchr( raw_image_name, '/' ) ) {
+			strncpy( image_name, basname + 1, 255 );
+		} else {
+			strncpy( image_name, raw_image_name, 255 );
+		}
 
 		// start: verify parameters, mkdir, fopen
 		if( index == 0 ) {

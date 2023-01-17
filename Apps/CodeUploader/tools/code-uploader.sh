@@ -61,7 +61,7 @@ fi
 # test: current working directory has an './apps/' sub-folder
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [[ ! -d ./apps/ ]]; then
-    echo "$SELF: Application package folder './apps/ doesn't exist!"
+    echo -e "\n$SELF: Application package folder './apps/ doesn't exist!\n"
     exit 1
 fi
 
@@ -73,15 +73,15 @@ appid=$(basename ./apps/* 2>/dev/null)
 
 # detect: application id number from './apps/' contents
 if [[ -z "$appid" ]]; then
-    echo "$SELF: Can't determine the application ID number from the './apps/' folder!"
-    echo "$SELF: The './apps/' folder should only contain a single numbered sub-folder!"
+    echo -e "\n$SELF: Can't determine the application ID number from the './apps/' folder!\n"
+    echo -e "\n$SELF: The './apps/' folder should only contain a single numbered sub-folder!\n"
 fi
 
 # test: application id is numeric
 [ -n "$appid" ] && [ "$appid" -eq "$appid" ] 2>/dev/null;
 if [ $? -ne 0 ]; then
-    echo "$SELF: Can't determine the application ID number from the './apps/' folder!"
-    echo "$SELF: The './apps/' subfolder ('$appid') is non-numeric!"
+    echo -e "\n$SELF: Can't determine the application ID number from the './apps/' folder!\n"
+    echo -e "\n$SELF: The './apps/' subfolder ('$appid') is non-numeric!\n"
 fi
 
 
@@ -91,7 +91,7 @@ fi
 image="./apps/$appid/esp32c3.app"
 
 if [[ ! -e $image ]]; then
-    echo "$SELF: Can't find pocuter application image file: '$image'"
+    echo -e "\n$SELF: Can't find pocuter application image file: '$image'\n"
     exit 1
 fi
 
@@ -105,7 +105,7 @@ size=$(wc -c < $image)
 # test: ping upload server ip address
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [[ -z "$(ping -W0.5 -qc1 $IPADDR | grep '1 received')" ]]; then
-    echo "$SELF: Unable to ping 'Code Upload Server' server at: $IPADDR"
+    echo -e "\n$SELF: Unable to ping 'Code Upload Server' server at: $IPADDR\n"
     exit 1
 fi
 

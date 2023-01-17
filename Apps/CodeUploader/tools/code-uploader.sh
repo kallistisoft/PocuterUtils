@@ -3,22 +3,16 @@
 # Copyright 2022 Kallistisoft
 # MIT License -- https://opensource.org/licenses/MIT
 
-#
-# TODO: change options processing to getopts and add -y option
-#
-# Consider using a config file ~/.code-uploader.conf
-#   the config file would contain the environment variables
-#   use eval to import into the script
-#
 
 SELF=$(basename $0);
-IPADDR=$1
+CONFIRM=1
+IPADDR=
 
 # define: usage text
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 USAGE=$(cat << EOF
 
-USAGE: $SELF [-y] [IP-ADDRESS]
+USAGE: $SELF [-y|--yes] [IP-ADDRESS]
 
     This script should be run in your project's root folder.
 
@@ -31,30 +25,34 @@ USAGE: $SELF [-y] [IP-ADDRESS]
 
         CODE_UPLOADER_IP_ADDRESS
  
-    If CODE_UPLOADER_IP_ADDRESS is set then the upload
-    confirmation prompt will be skipped.
+    If the '--yes' option is specified then the upload
+    confirmation prompt will be skipped
  
 
 EOF
 );
 
-# help: show usage info
+
+
+# args: iterate argument options
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if [[ "$1" == '--help' || "$1" == '-h' ]]; then
-    echo "$USAGE";
-    exit 1;
-fi
+for ARG in "$@"; do
+    case $ARG in
+        -h | --help ) echo "$USAGE"; exit 1;;
+        -y | --yes ) CONFIRM=0;;
+        *) IPADDR="$ARG";;
+    esac
+done
 
 # empty: missing IP address argument - test environment variable
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if [[ -z "$1" ]]; then
+if [[ -z "$IPADDR" ]]; then
     if [[ -z "$CODE_UPLOADER_IP_ADDRESS" ]]; then
         echo "$USAGE";
         exit 1;
     fi
     IPADDR=$CODE_UPLOADER_IP_ADDRESS
 fi
-
 
 
 
@@ -127,7 +125,7 @@ echo
 
 # confirm: show confirmation dialog
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if [[ ! -n "$CODE_UPLOADER_IP_ADDRESS" ]]; then
+if [[ $CONFIRM -eq 1 ]]; then
     read -p "Do you wish to upload this program? [Y/n]: " -n 1 -r REPLY
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]; then

@@ -19,7 +19,11 @@ void setup() {
     // setup your app here    
     lastFrame = micros();
 
-    printf("\n\n***********\n... Code Uploader Self-Hoisting Boot Proxy ...\n***********\n\n");
+    printf("\n\n");
+    printf("**********************************************\n");
+    printf("... Code Uploader Self-Hoisting Boot Proxy ...\n");
+    printf("**********************************************\n");
+
     delay(100);  
 }
 

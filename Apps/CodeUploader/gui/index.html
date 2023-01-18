@@ -10,7 +10,18 @@
 		<!-- include-stop -->
 	</head>
 	<body>
-		<h2>Code Upload Server</h2>
+		<div id="overlay">			
+			<div id="overlay-content" onclick="popup_close();">
+				<div id="overlay-title">null</div>
+				<div id="overlay-text">null</div>
+				<div class="overlay-button">
+					<div class="overlay-close">OK</div>
+				</div>
+			</div>
+		</div>
+		<header>
+			<h2>Code Upload Server</h2>
+		</header>
 		<div id="controls">
 			<div id="dropzone" loaded="false" dragover="false">
 				<div id="drop_prompt">

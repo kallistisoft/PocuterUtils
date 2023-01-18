@@ -13,6 +13,56 @@ function waiting( state ) {
     }
 }
 
+let popup_timer = null;
+function popup_open( type, text ) {
+
+    const title = $('overlay-title');
+    switch( type ) {
+        case 'warning':
+            title.style.backgroundColor = '#2444ac';
+            title.innerText = 'Warning!';
+            break;        
+        case 'error':
+            title.style.backgroundColor = '#f55959';
+            title.innerText = 'Error!';
+            break;
+        case 'ok':
+            title.style.backgroundColor = '#34ac24';
+            title.innerText = 'Success!';
+            break;
+        default:
+            title.style.backgroundColor = null;
+            title.innerText = 'Alert!';
+            break;
+    };
+
+    $('overlay-text').innerText = text;
+    
+    const overlay = $('overlay');
+    overlay.style.opacity = null;
+    overlay.style.transitionProperty = 'opacity';
+    overlay.style.height = '100%';
+    
+    popup_timer = window.setTimeout( () => {
+        console.log('starting popup fade out...');
+        overlay.classList.add('fadeout');
+        popup_timer = window.setTimeout( () => {
+            console.log('auto-closing popup...');
+            popup_close();
+        }, 2000);
+    }, 3000);
+    
+}
+
+function popup_close() {
+    window.clearTimeout( popup_timer );   
+    const overlay = $('overlay'); 
+    overlay.style.height = null;
+    overlay.classList.remove('fadeout');
+    overlay.style.transitionProperty = 'none';
+    overlay.style.opacity = 1;
+}
+
 let imageFile = null;
 let is_uploading = false;
 function UploadFile() {
@@ -36,7 +86,7 @@ function UploadFile() {
         imageFile == null;
         waiting( false );
 
-        alert("Error image file must be >= 600KiB in size!");
+        popup_open('warning',"Error image file must be >= 600KiB in size!");
         return;
     }
 
@@ -79,14 +129,29 @@ function UploadFile() {
 
     // onloadend: clear wait state flags and 
     xreq.onloadend = () => {
+
+        // display: server response code
         if( xreq.status === 200 ) {
-            console.log( xreq.responseText );            
-            console.log('Done uploading file...');
-            alert( xreq.responseText );
+            console.log( xreq.responseText );
+            popup_open( 
+                (xreq.responseText.slice(0,2) != 'OK') ? 'ok' : 'warning',
+                xreq.responseText 
+            );
+        } else {
+            if( xreq.status === 405 ) {
+                popup_open('error', '405 (Method Not Allowed) ...' );
+            } else {
+                const errmsg = `Server error code: ${xreq.status}`;
+                console.error( errmsg );
+                popup_open('error', errmsg );
+            }
         }
+        
+        // clear: waiting/upload status flags
         waiting( false );
         is_uploading = false;
 
+        // reset: gui element states
         $('progress_bar').value = 0;
         $('progress_bar').style.display = 'none';
         $('button').style.display = 'block';
@@ -153,7 +218,7 @@ window.onload = () => {
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         const filesArray = event.dataTransfer.files;
         if( filesArray.length > 1 ) {
-            alert("Only one file may be dragged and dropped at a time!");
+            popup_open('warning',"Only one file may be dragged and dropped at a time!");
             return;
         }
         
@@ -219,7 +284,7 @@ window.onload = () => {
             window.clearInterval( timer );
 
             if( imageFile == null ) {
-                alert("Could not find Pocuter image file 'esp32c3.app'!");
+                popup_open('warning',"Could not find Pocuter image file 'esp32c3.app'!");
                 waiting(false);
                 return;
             }

@@ -10,15 +10,22 @@
 MD5 md5sum;
 
 long lastFrame;
+bool is_receiving_file = false;
+double www_upload_timer = 0.0;
 
 #define DEBUG_TEMPFILE_ONLY 1
 
-#define CENTER_TEXT(y,text) sizeX/2 - gui->UG_StringWidth(text)/2, y, text
-#define NEXTLINE(text) gui->UG_PutStringSingleLine(0, 18+text_y, text); text_y += 12;
+#define CENTER_TEXT(y,text) \
+	gui->UG_PutStringSingleLine(sizeX/2 - gui->UG_StringWidth(text)/2, y, text);
+
+#define NEXTLINE(text) \
+	gui->UG_PutStringSingleLine(0, 18+text_y, text); text_y += 12;
 
 #define REMOVE_TEMPFILE() \
 	if( www_image_file ) fclose( www_image_file ); \
-	if( www_image_file ) remove( www_path_temp );
+	if( www_image_file ) remove( www_path_temp ); \
+	is_receiving_file = false;\
+	www_upload_timer=0;
 
 #define WWW_ERROR(...) \
 	printf( "\n[%s] ", timestamp ); \
@@ -86,6 +93,8 @@ char  www_image_hash  [33]  = "";
 FILE* www_image_file = 0;
 long  www_image_size = 0;
 
+long  www_app_size = 0;
+
 
 void setup() {
 	pocuter = new Pocuter();
@@ -140,7 +149,7 @@ void setup() {
 			request->hasParam("appSize",true) && 
 			request->hasParam("appImage",true,true)) 
 		) {
-			WWW_ERROR("Error: Missing or incorrect request parameters!");
+			WWW_ERROR("Error: Missing or incorrect request parameters!",0);
 			request->send(200, "text/plain", www_error_msg );
 			return;
 		}
@@ -178,7 +187,7 @@ void setup() {
 
 		// debug: upload debug mode -- skip writing file unless self-hoisting
 		if( DEBUG_TEMPFILE_ONLY && appID != 8080 ){
-			remove( www_path_image );			
+			remove( www_path_temp );			
 			LOGMSG("DEBUG: skipping installation of uploaded image file...", 0 );
 			request->send(200, "text/plain", "DEBUG: skipping installation of temporary image..." );
 			return;
@@ -243,27 +252,47 @@ void setup() {
 			www_image_hash[0]  = '\0';
 			www_image_file = NULL;			
 			www_image_size = 0;
+			www_app_size = 0;
+			www_upload_timer = 0.0;
 			md5sum.reset();
+
 
 			// verify: request has valid appID parameter
 			if( !(request->hasParam("appID",true) ) ) {
-				WWW_ERROR("Error: Missing appID parameter!");
+				WWW_ERROR("Error: Missing appID parameter!",0);
 			}
 
 			// verify: appID is numeric and >= 2
 			AsyncWebParameter* paramID = request->getParam("appID",true);
 			long appID = strtol( paramID->value().c_str(), &numtest, 10);
 			if( *numtest || appID < 2 ) {
-				WWW_ERROR("Error: appID isn't a number >= 2!");
+				WWW_ERROR("Error: appID isn't a number >= 2!",0);
 			}
+
+
+			// verify: request has appSize parameter
+			if( !(request->hasParam("appSize",true) ) ) {
+				WWW_ERROR("Error: Missing appSize parameter!",0);
+			}
+
+			// verify: appSize is numeric
+			AsyncWebParameter* paramSize = request->getParam("appSize",true);
+			long appSize = strtol( paramSize->value().c_str(), &numtest, 10);
+			if( *numtest ) {
+				WWW_ERROR("Error: appSize isn't a number!",0);
+			}
+			www_app_size = appSize;
+
 
 			// verify: appImage filename
 			if( strcmp( image_name, "esp32c3.app" ) != 0 ) {
 				WWW_ERROR( "Error: Invalid name for upload image file!: '%s'", image_name );
 			}
 
+
 			// debug: begin writing file to sd card
 			LOGMSG( "IMAGE: %S", image_name );
+			is_receiving_file = true;
 
 			// mkdir: app folder
 			char dirpath[256];
@@ -309,8 +338,9 @@ void setup() {
 
  			strncpy( www_image_hash, md5sum.getHash().c_str(), 32 );
  			LOGMSG(" HASH: %s", www_image_hash );
- 
- 			printf(" ----\n");
+
+			is_receiving_file = false;			
+ 			printf(" ----");
 		}
 
 	});
@@ -322,7 +352,7 @@ void setup() {
 
 
 void loop() {
-	uint text_y = 0;	
+	uint text_y = 0;
 	pocuter->Sleep->disable();
 
 	dt = (micros() - lastFrame) / 1000.0 / 1000.0;
@@ -333,7 +363,15 @@ void loop() {
 		pocuter->OTA->setNextAppID(1);
 		pocuter->OTA->restart();
 	}
-	
+
+	// check: upload timout counter
+	if( is_receiving_file ) www_upload_timer += dt;
+	if( www_upload_timer > 10.0 ) {
+		char *timestamp = GetCurrentTimeString();
+		LOGMSG(" QUIT: File transfer timed out!",0);
+		REMOVE_TEMPFILE();
+	}
+
 	// update your app here
 	// dt contains the amount of time that has passed since the last update, in seconds
 	UGUI* gui = pocuter->ugui;
@@ -341,13 +379,14 @@ void loop() {
 	uint16_t sizeY;
 	pocuter->Display->getDisplaySize(sizeX, sizeY);
 	
-	gui->UG_FillFrame(0, 0, sizeX, sizeY, C_BLACK);
+	gui->UG_FillScreen( C_BLACK );
 	gui->UG_FillFrame(0, 0, sizeX, 13, C_BLUE);
 	gui->UG_FontSelect(&FONT_POCUTER_5X7);
 	gui->UG_SetForecolor( C_YELLOW );
-    gui->UG_PutStringSingleLine( CENTER_TEXT( 0, "Code Uploader" ) );
+    CENTER_TEXT( 0, "Code Uploader" );
 	gui->UG_SetForecolor( C_WHITE );
 
+	// sdcard: is not mounted
 	if( !pocuter->SDCard->cardIsMounted() ) {
 		gui->UG_SetForecolor( C_YELLOW );
 		NEXTLINE( "SD card is not" );
@@ -358,27 +397,12 @@ void loop() {
 		return;
 	}
 
+	// get: wifi credentials
 	PocuterWIFI::wifiCredentials cred;
 	pocuter->WIFI->getCredentials( &cred );	
 
-	if( pocuter->WIFI->getState() == PocuterWIFI::WIFI_STATE_CONNECTED ) {
-		char addr[64];
-		const PocuterWIFI::ipInfo* info = pocuter->WIFI->getIpInfo();
-		if( info->ipV4 ) {
-			snprintf(addr, 64, "%s", inet_ntoa(info->ipV4));
-			NEXTLINE( "Server address:" );
-			gui->UG_SetForecolor( C_PLUM );
-			text_y += 2;
-			NEXTLINE( addr);
-		} else {
-			NEXTLINE( "Obtaining DHCP" );
-			NEXTLINE( "address from:" );
-			gui->UG_SetForecolor( C_PLUM );			
-			text_y += 2;
-			NEXTLINE( (char*)cred.ssid );
-		}
-	}
-	else {		
+	// wifi: connection not established or unavailable
+	if( pocuter->WIFI->getState() != PocuterWIFI::WIFI_STATE_CONNECTED ) {
 		if( cred.ssid ) {
 			NEXTLINE( "Trying to connect" );
 			NEXTLINE( "to WiFi network:" );
@@ -388,10 +412,57 @@ void loop() {
 		}
 		else {
 			NEXTLINE( "Unable to connect" );
-			NEXTLINE( "to WiFi network:" );
+			NEXTLINE( "to WiFi network!" );
 		}
 		pocuter->Display->updateScreen();
 		return;
 	}
+
+	// xfer: currently receiving a file - display progress  %
+	if( is_receiving_file ) {
+		float pct = ((float)www_image_size / (float)www_app_size);
+
+		char xfer_bytes[24];
+		snprintf(xfer_bytes, 24, "%0.02f Kib", (float)www_image_size / 1024.0);		
+
+		uint top = 24;
+		uint margin = 6;
+		uint height = 12;
+		uint width = sizeX - (2*margin) - 2;
+		uint level = ((float)width * pct);
+		gui->UG_FillFrame( margin,   top,   sizeX - margin,     top + height,     C_WHITE );
+		gui->UG_FillFrame( margin+1, top+1, sizeX - margin - 1, top + height - 1, C_BLACK );
+		gui->UG_FillFrame( margin+2, top+2, margin + 2 + level, top + height - 2, C_WHITE );
+
+		gui->UG_SetForecolor( C_PLUM );		
+		CENTER_TEXT( top + 16, xfer_bytes );
+
+		//NEXTLINE( xfer_bytes );
+		pocuter->Display->updateScreen();
+		return;		
+	}
+
+	// wifi: show server ip address
+	const PocuterWIFI::ipInfo* info = pocuter->WIFI->getIpInfo();
+	if( info->ipV4 ) {
+		char addr[17];		
+		snprintf(addr, 17, "%s", inet_ntoa(info->ipV4));
+
+		NEXTLINE( "Server address:" );
+		gui->UG_SetForecolor( C_PLUM );
+		text_y += 2;		
+		NEXTLINE( addr );
+	} 
+	
+	// wifi: waiting for ip address
+	else {
+		NEXTLINE( "Obtaining DHCP" );
+		NEXTLINE( "address from:" );
+		gui->UG_SetForecolor( C_PLUM );
+		text_y += 2;
+		NEXTLINE( (char*)cred.ssid );
+	}
+
+	// update display
 	pocuter->Display->updateScreen();
 }

@@ -1,3 +1,14 @@
+
+// Copyright 2023 Kallistisoft
+// GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+/*
+* [PocuterUtils]/Apps/CodeUploader/CodeUploader.ino
+* 
+* Code Upload Server Application
+*
+* See README.md file for details, examples, and usage guide
+*/
+
 #include "settings.h"
 #include "system.h"
 
@@ -9,17 +20,22 @@
 #include "md5.h"
 MD5 md5sum;
 
-long lastFrame;
-bool is_receiving_file = false;
-double www_upload_timer = 0.0;
 
 #define DEBUG_TEMPFILE_ONLY 1
+
+#define WWW_UPLOAD_TIMEOUT 10.0
+double www_upload_timer = 0.0;
+bool is_receiving_file = false;
+
+
 
 #define CENTER_TEXT(y,text) \
 	gui->UG_PutStringSingleLine(sizeX/2 - gui->UG_StringWidth(text)/2, y, text);
 
 #define NEXTLINE(text) \
 	gui->UG_PutStringSingleLine(0, 18+text_y, text); text_y += 12;
+
+
 
 #define REMOVE_TEMPFILE() \
 	if( www_image_file ) fclose( www_image_file ); \
@@ -37,6 +53,8 @@ double www_upload_timer = 0.0;
 
 #define LOGMSG( _format_, ... ) \
 	printf("[%s] " _format_ "\n", timestamp, __VA_ARGS__ ); delay(10);
+
+
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -83,6 +101,8 @@ void DEBUG_HTTP_REQUEST( AsyncWebServerRequest *request ) {
 
 }
 
+
+
 // global variables for response state tracking
 char  www_error_msg   [256] = "";
 char  www_path_image  [256] = "";
@@ -96,6 +116,8 @@ long  www_image_size = 0;
 long  www_app_size = 0;
 
 
+
+long lastFrame;
 void setup() {
 	pocuter = new Pocuter();
 	pocuter->begin(PocuterDisplay::BUFFER_MODE_DOUBLE_BUFFER);
@@ -366,7 +388,7 @@ void loop() {
 
 	// check: upload timout counter
 	if( is_receiving_file ) www_upload_timer += dt;
-	if( www_upload_timer > 10.0 ) {
+	if( www_upload_timer >= WWW_UPLOAD_TIMEOUT ) {
 		char *timestamp = GetCurrentTimeString();
 		LOGMSG(" QUIT: File transfer timed out!",0);
 		REMOVE_TEMPFILE();

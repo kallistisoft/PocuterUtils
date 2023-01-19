@@ -1,4 +1,9 @@
-const $ = ( id ) => ( document.getElementById( id ) );
+/*
+* Copyright 2023 Kallistisoft
+* GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+*/
+
+window.$ = ( id ) => ( document.getElementById( id ) );
 
 function waiting( state ) {
     console.log(`waiting(${state})`);

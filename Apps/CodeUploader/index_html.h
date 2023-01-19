@@ -1,10 +1,19 @@
 R"rawliteral(
+<!--
+  Copyright 2023 Kallistisoft
+  GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+-->
 <!DOCTYPE HTML><html>
 	<head>
 		<title>Pocuter Application Upload Server</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="icon" href="data:,">
 <style>
+/*
+* Copyright 2023 Kallistisoft
+* GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+*/
+
 html {
 	font-family: Arial; 
 	display: inline-block; 
@@ -21,18 +30,18 @@ body {
 	background-color: #fff;
 	background: linear-gradient(-45deg, #ee7752, #ee6e9f, #23a6d5, #23d5ab);
 	background-size: 400% 400%;
-	animation: body-gradient 15s ease infinite;
+	animation: body-gradient 60s ease infinite;
 }
 
 @keyframes body-gradient {
 	0% {
-		background-position: 0% 50%;
+		background-position: 0% 25%;
 	}
 	50% {
 		background-position: 100% 50%;
 	}
 	100% {
-		background-position: 0% 50%;
+		background-position: 0% 25%;
 	}
 }
 
@@ -64,7 +73,7 @@ h2 {
 	border-radius: 2em;
 	background-color: rgb(252, 252, 252, 0.1);
 
-	box-shadow: inset 0px 1px 0px rgba(255,255,255,1),0px 1px 3px rgba(0,0,0,0.3);
+	box-shadow: inset 0px 1px 0px rgb(156, 156, 156),0px 1px 3px rgba(0,0,0,0.3);
 
 	display: grid;
 	place-items: center;
@@ -290,7 +299,12 @@ h2 {
 </style>
 
 <script type="application/javascript">
-const $ = ( id ) => ( document.getElementById( id ) );
+/*
+* Copyright 2023 Kallistisoft
+* GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+*/
+
+window.$ = ( id ) => ( document.getElementById( id ) );
 
 function waiting( state ) {
     console.log(`waiting(${state})`);

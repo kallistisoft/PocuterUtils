@@ -1,0 +1,594 @@
+#!/usr/bin/env python3
+"""
+  Pocuter Code Deployment Tool
+
+  Copyright 2023 Kallistisoft
+  GNU GPL-3 https://www.gnu.org/licenses/gpl-3.0.txt
+
+  See README.md file for details, examples, and usage guide
+"""
+from optparse import OptionParser, OptionGroup;
+import configparser;
+import subprocess;
+import socket;
+import hashlib;
+import shutil;
+import sys;
+import os;
+
+
+# define: global paths and environment variables
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+default_app_converter = "appconverter.exe"
+env_app_converter = 'POCUTER_DEPLOY_PACKAGER';
+env_ip_address = 'POCUTER_DEPLOY_ADDRESS';
+
+
+
+# Exception:ApplicationError() :: custom application exception
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+class ApplicationError( Exception ):
+    def __init__(self, message ):
+        super().__init__( message );
+
+
+
+# string validate_current_folder() :: verify that current folder contains source files
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+def validate_current_folder():
+    basename = os.path.basename(os.getcwd());
+    path_source = f'./{basename}.ino';
+    path_meta = f'./{basename}.ini';
+
+    if( not os.path.exists(path_source) ):
+        raise ApplicationError(f'Unable to locate source file: {path_source}');
+
+    if( not os.path.exists(path_meta) ):
+        raise ApplicationError(f'Unable to locate metadata file: {path_meta}');
+
+    return basename;
+
+
+
+# bool build_app( basename, flags ) :: compile application source code w/optional flags
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+def build_app( basename, flags=[] ):
+    print(f"Compiling '{basename}'...");
+    
+    # set: temporary build path
+    path_build_dir = '/tmp/pocuter-compile-build/';
+
+    # create: temporary build folder
+    if( not os.path.exists( path_build_dir ) ):
+        os.mkdir( path_build_dir )
+
+    # help: caller requested the --help page for arduino-cli
+    if( '--help' in flags ):
+        os.system(f"arduino-cli compile --help");
+        sys.exit(1);
+
+    # compile: raw binary image
+    exitcode = os.system(f"arduino-cli compile -e {' '.join(flags)} -b esp32:esp32:pocuterone --output-dir {path_build_dir}");
+
+    # copy: binary from build directory if successfull
+    if( exitcode == 0 ):
+        shutil.copy(f'{path_build_dir}/{basename}.ino.bin', f'./{basename}.ino.esp32c3.bin');
+
+    # remove: temp build directory
+    shutil.rmtree( path_build_dir );
+
+    print('');
+
+    # return: bool status of compilitation
+    return( exitcode == 0);
+
+
+
+# [id,version] package_app( basename, packager, appid, version ) :: package application and update metadata
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+def package_app( basename, packager, appid=None, version=None ):
+    print(f"Packaging '{basename}'...");
+
+    # set: image/metadata file names
+    path_image = f'{basename}.ino.esp32c3.bin';
+    path_meta = f'{basename}.ini';
+
+    # parse: app metadata file (case-sensitive)
+    # ---------------------------------------------------------------------------------------------
+    config_write = False;
+    config = configparser.ConfigParser();
+    config.optionxform = str
+    config.read( path_meta );
+
+    # test: metadata file has valid section header
+    if( not 'APPDATA' in config ):
+        raise ApplicationError(f"Unable to read the 'APPDATA' section from INI file: {path_meta}");
+
+    # store: ID in metadata file
+    if( appid ):
+        config['APPDATA']['AppID'] = str(appid);
+        print(f'* Writting AppID: {appid}');
+        config_write = True;
+
+    # store: version in metadata file
+    if( version ):
+        config['APPDATA']['Version'] = version;
+        print(f'* Writting Version: {version}');
+        config_write = True;
+
+    # write: update app metadata file
+    if( config_write ):
+        print('');
+        with open( path_meta, 'w' ) as fileobj:
+            config.write( fileobj, space_around_delimiters=False );
+
+    # test: metadata is valid
+    if( not 'AppID' in config['APPDATA'] ):
+        raise ApplicationError(f"Unable to read the 'APPDATA'->'AppID' item from INI file: {path_meta}");
+
+    # test: metadata is valid
+    if( not 'Version' in config['APPDATA'] ):
+        raise ApplicationError(f"Unable to read the 'APPDATA'->'Version' item from INI file: {path_meta}");        
+
+    # get: app id and version from config
+    appid = config.getint( 'APPDATA', 'AppID' );
+    version = config.get( 'APPDATA', 'Version' );
+
+
+
+    # test: valid pocuter packaging application
+    # ---------------------------------------------------------------------------------------------
+    if( '.jar' in packager ):
+        packager = f'java -jar {packager}';
+    else:
+        if( not shutil.which( packager ) ):
+            packager = './' + packager;
+            if( not os.path.exists( packager ) ):
+                raise ApplicationError(f"Unable to locate pocuter app converter: {packager}");
+
+
+
+    # package: raw binary image into pocuter application package
+    # ---------------------------------------------------------------------------------------------
+    exitcode = os.system(f'{packager} -image {path_image} -meta {path_meta} -id {appid} -version {version}');
+    print('');
+    
+    # return: bool status of packager
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    return( None if exitcode else [appid,version] );
+
+
+
+# bool upload_app( basename, address, address, appid, version ) :: upload packaged application to upload server
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-
+def upload_app( basename, address, noprompt=False, appid=None, version=None ):
+    image_path=None
+
+    # detect: application ID number from ./apps/ folder contents
+    if( not appid ):
+
+        # test: ./apps/ folder exists
+        if( not os.path.exists('./apps/') ):
+            raise ApplicationError("Unable to locate './apps/' folder!");
+
+        # iterate: ./apps/ folder contents
+        for path in os.listdir('./apps/') :
+            if( os.path.isdir( f'./apps/{path}' ) ):
+                if( path.isdigit() ):
+                    appid = path;
+                    break;
+        
+        # test: found numbered sub-folder in './apps/'
+        if( not appid ):
+            raise ApplicationError("Unable to find numbered sub-folder in the './apps/' directory!")
+
+    # set: full image file path
+    image_path = f'./apps/{appid}/esp32c3.app';
+
+    # test: image file path exists
+    if( not os.path.exists( image_path ) ):
+        raise ApplicationError(f"Unable to locate pocuter image file: {image_path}");
+
+
+
+    # read: embedded metadata from image file
+    # ---------------------------------------------------------------------------------------------
+    image_file = open(image_path, 'rb');
+    bindata = image_file.read( 2048 );
+    image_file.close();
+
+    # func: bool isascii( ordinal ) -- test if char code is ascii text
+    def isascii( ordinal ):
+        if( ordinal >= 32 and ordinal < 127 ):
+            return True;
+        if( ordinal in [9,10,13]  ):
+            return True;
+        return False;
+
+    # seek: begining of ascii metadata block
+    seek = 0;
+    for i in range( 64 ):
+        chunk = bindata[i:i+9];
+        if( chunk == b'[APPDATA]' ):
+            bindata = bindata[i:];
+            break;
+
+    # seek: ending of ascii metadata block
+    text = ''
+    for i in range( 2048 ):
+        byte = bindata[i];
+        if( isascii( byte ) ):
+            text += chr( byte );
+        else:
+            break;
+
+    # parse: metadata block
+    config = configparser.ConfigParser()
+    config.read_string( text );
+
+    # test: metadata file has valid section header
+    if( not 'APPDATA' in config ):
+        raise ApplicationError(f"Unable to read the embedded 'APPDATA' section from image file: {image_path}");
+
+    # get: application metadata values
+    appname = config.get( 'APPDATA', 'Name' );
+    author = config.get( 'APPDATA', 'Author' );
+    if( not version and config.has_option('APPDATA', 'Version') ): 
+        version = config.get( 'APPDATA', 'Version' );
+    if( not version ): version = '<unknown>';
+
+
+
+    # get: image file object metadata - MD5 + file size
+    # ---------------------------------------------------------------------------------------------
+    with open(image_path, 'rb') as file:
+        image_md5 = hashlib.md5( file.read() );
+    image_md5 = image_md5.hexdigest();
+    image_size = os.path.getsize( image_path );
+    
+
+
+    # print: summary of application meta data
+    # ---------------------------------------------------------------------------------------------
+    print(f"""
+Ready to upload application to {address}...
+
+     ID: {appid}
+   Name: {appname}
+ Author: {author}   
+Version: {version}
+
+    MD5: {image_md5}
+   File: {image_path}
+   Size: {image_size}
+""");
+
+
+
+    # func: bool ping(ip) :: attempt to connect server on port 80
+    # ---------------------------------------------------------------------------------------------
+    def ping( ip ):
+        try:
+            socket.setdefaulttimeout(1);
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+            s.connect((ip, 80));
+        except OSError as error:
+            return False
+        else:
+            s.close()
+            return True
+    
+    # test: server is reachable
+    if( not ping( address) ):
+        raise ApplicationError(f"Unable to reach code upload server at ip address: {address}");
+
+
+
+    # prompt: confirmation for application upload
+    # ---------------------------------------------------------------------------------------------
+    if( not noprompt ):
+        while True:
+            try: answer = input("Do you wish to upload this program? [Yes/no]: ");
+            except: exit(1);
+            if( not len(answer) ):
+                break;
+            if( answer[0].lower() == 'y' ):
+                break;
+            if( answer[0].lower() == 'n' ):
+                exit(1);
+
+
+
+    # upload: image file to code upload server
+    # ---------------------------------------------------------------------------------------------
+    process = subprocess.Popen(
+        [
+            'curl', '-#',
+            '-F', f"appID={appid}",
+            '-F', f"appSize={image_size}",
+            '-F', f"appMD5={image_md5}",
+            '-F', f"appImage=@{image_path}",
+            f"http://{address}/upload"
+        ],
+        stdout=subprocess.PIPE
+    );
+
+    # func: read single char from process stdout (used to show curl progress bar)
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def read_process( proc ):
+        return proc.stdout.read(1).decode("utf-8")
+
+    # echo: process output to terminal
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    print('');    
+    char = read_process( process );
+    print( char, end='' );
+    while( char ):
+        print( char, end='' );
+        char = read_process( process );
+    print('\n')
+
+
+    # return: bool upload success
+    # ---------------------------------------------------------------------------------------------
+    return( not process.returncode );
+
+
+
+
+#--------------------------------------------------------------------------------------------------
+#   MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN :: MAIN
+#--------------------------------------------------------------------------------------------------
+if __name__ == "__main__":
+
+    # define: default arguments
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    converter = default_app_converter;
+    command=None;
+    address=None;
+
+    # get: environment variables
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if( os.getenv( env_app_converter ) ): converter = os.getenv( env_app_converter );
+    if( os.getenv( env_ip_address ) ): address = os.getenv( env_ip_address );
+
+    # define: application usage text
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    help_commands = f"""
+
+Available Commands:
+  build       Compile source code using arduino-cli
+  package     Package binary image using {converter}
+  upload      Upload packaged application to 'Code Upload' server
+  deploy      Compile, package, and upload application
+
+  use the --help option with a command for more information...
+""";
+
+    # define: application description text
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    help_notes = f"""
+
+Usage Notes:
+  This tool is designed to be run from the root of an arduino sketch folder.
+  It expects to find a file ending in '.ino' and a file ending in '.ini' both
+  having the same name as the folder.
+
+"""
+    # OptionsParser custom_parser( command ) :: create a custom command line options parser
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def custom_parser( command=None ):
+        usage = "\n%prog COMMAND [--help] [options] [ip-address]";
+
+        if( command == None ): usage += help_commands;
+
+        _parser = OptionParser( usage=usage, add_help_option=False );
+
+        # overload: parser.print_help() method to show custom title and description
+        _print_help = _parser.print_help;
+        def my_print_help( arg=None, showNotes=True ):
+            print("Pocuter Code Deployment Tool (pocuter-deploy).\n"); 
+            _print_help( arg );
+            if( showNotes ): print( help_notes ); 
+            else: print("");
+        _parser.print_help = my_print_help;
+
+        # overload: parser.print_usage() method to show custom title and description
+        _print_usage = _parser.print_usage;
+        def my_print_usage( arg=None ):
+            print("Pocuter Code Deployment Tool (pocuter-deploy).\n"); 
+            _print_help( arg );
+            print( help_notes ); 
+        _parser.print_usage = my_print_usage;
+
+        # provide: custom parser error function
+        def my_print_error( text ):
+            _print_usage();
+            if( text ): print(f"ERROR: {text}\n");
+            sys.exit(1);
+        _parser.print_error = my_print_error;
+
+        # overload: builtin help option
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        _parser.add_option(
+            '-h','--help',
+            action="store_true",
+            dest="show_help",        
+            help="show this help message and exit",
+            default=False
+        );
+
+
+        # options: build command
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        group_build = OptionGroup( 
+            _parser, 
+            'Build command options',
+            f"Compile arduino source code with optional flags. The flag argument can be specified multiple times."
+        );
+        group_build.add_option(
+            '-f','--flags',
+            action="append", 
+            type="string",
+            dest="build_flag",
+            help="compile flag to pass arduino-cli",
+            default=[]
+        );
+
+
+        # options: package options
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        group_package = OptionGroup( 
+            _parser, 
+            'Package command options', 
+            "If --appid or --version are supplied they will be *written* to the metadata file, "
+            "otherwise these values are *read* from the metadata file.\nIf the environment variable "
+            f"{env_app_converter} exists it will be used for packaging the app."
+        );
+
+        group_package.add_option(
+            '-i','--id', 
+            action="store", 
+            type="int",
+            dest="appid",
+            help="application ID number [> 100000]",
+            default=None
+        );
+
+        group_package.add_option(
+            '-v','--version', 
+            action="store", 
+            type="string",
+            dest="version",
+            help="application version string in the form [x.y.z]",
+            default=None
+        );
+
+        group_package.add_option(
+            '-c','--converter', 
+            action="store", 
+            type="string",
+            dest="packager",
+            help=f"path to app converter .exe or .jar file... ({converter})",
+            default=converter
+        );
+
+
+        # upload: package options
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        group_upload = OptionGroup( 
+            _parser, 
+            'Upload command options',
+            "Upload a packaged pocuter application from the ./apps/ folder to the code upload server at "
+            "the given ip address or hostname. If the address is omitted it will be read from the "
+            f"environment variable: {env_ip_address} { '('+address+')' if address else '' }"
+        );
+        group_upload.add_option(
+            '-y','--yes',
+            action="store_true",
+            dest="noprompt",
+            help="skip upload confirmation prompt",
+            default=None
+        )
+
+
+        # deploy: package options (help stub)
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        group_deploy = OptionGroup( 
+            _parser, 
+            'Deploy command options',
+            "The deploy command accepts all of the previous options..."
+        );
+
+
+        # bind: option command groups to parser
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if( command in ['deploy','build'] ): _parser.add_option_group( group_build );
+        if( command in ['deploy','package'] ): _parser.add_option_group( group_package );
+        if( command in ['deploy','upload'] ): _parser.add_option_group( group_upload );
+        if( command in ['deploy'] ): _parser.add_option_group( group_deploy );
+
+        # return: parser object
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        return _parser;
+
+
+
+    # parse: command line options
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    parser = custom_parser('deploy');
+    (options, args) = parser.parse_args();
+
+    # help: show full help message
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if( len(args) == 0 and options.show_help ):
+        parser.print_help();
+        sys.exit(1);
+
+    # test: valid COMMAND argument given
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if( len(sys.argv) == 1 or not len(args) ):
+        parser = custom_parser( None );
+        parser.print_error('Missing COMMAND argument!');
+
+    # test: command argument in list
+    if( not (args[0].lower() in ['build','package','upload','deploy']) ):
+        parser = custom_parser( None );
+        parser.print_error(f"Unknown value ({args[0]}) for COMMAND argument!");
+
+    # set: command argument value
+    command = args[0].lower();
+
+    # rebuild: options parser restricted to command group
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    parser = custom_parser( command );
+
+    # help: show command specific help message
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if( options.show_help ):
+        parser.print_help( None, False );
+        sys.exit(1);
+
+    # test: valid ip-address argument given
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if( command in ['deploy','upload'] ):
+        # set: ip address from positional argument
+        if( len(args) == 2 ):
+            address = args[1];
+        
+        # error: ip address required!
+        elif( not address ):
+           parser.print_error(f"IP address is required for upload or deploy command!");
+
+
+    # TRY: execute selected application command
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    try:
+        # get: current folder name
+        basename = validate_current_folder();
+        appid=None;
+        version=None;
+
+        if( command == 'build' or command == 'deploy' ):
+            if( not build_app( basename, options.build_flag ) ):
+                sys.exit(1);
+
+        if( command == 'package' or command == 'deploy' ):
+            result = package_app( basename, options.packager, options.appid, options.version ); 
+            if( not result ):
+                sys.exit(1);
+            else:
+                appid = result[0];
+                version = result[1];
+
+        if( command == 'upload' or command == 'deploy' ):
+            if( not not upload_app( basename, address, options.noprompt, appid, version ) ):
+                sys.exit(1);
+
+        # exit: command succeeded!
+        sys.exit(0);
+
+    # EXCEPT: application error has occurred!
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    except ApplicationError as ex:
+        parser.print_error( ex  );        

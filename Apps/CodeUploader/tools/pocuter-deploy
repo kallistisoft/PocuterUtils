@@ -124,11 +124,17 @@ def package_app( basename, packager, appid=None, version=None ):
 
     # test: metadata is valid
     if( not 'AppID' in config['APPDATA'] ):
-        raise ApplicationError(f"Unable to read the 'APPDATA'->'AppID' item from INI file: {path_meta}");
+        raise ApplicationError(
+            f"Unable to read the 'APPDATA'->'AppID' item from INI file: {path_meta}\n"
+            "Please use the --id option to set the application ID!"
+        );
 
     # test: metadata is valid
     if( not 'Version' in config['APPDATA'] ):
-        raise ApplicationError(f"Unable to read the 'APPDATA'->'Version' item from INI file: {path_meta}");        
+        raise ApplicationError(
+            f"Unable to read the 'APPDATA'->'Version' item from INI file: {path_meta}\n"
+            "Please use the --version option to set the application version!"
+        );
 
     # get: app id and version from config
     appid = config.getint( 'APPDATA', 'AppID' );

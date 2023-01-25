@@ -21,14 +21,14 @@
 MD5 md5sum;
 
 
-#define DEBUG_TEMPFILE_ONLY 1
+#define DEBUG_TEMPFILE_ONLY 0
 
 #define WWW_UPLOAD_TIMEOUT 10.0
 double www_upload_timer = 0.0;
 bool is_receiving_file = false;
 
 
-
+// logging and error message macros
 #define CENTER_TEXT(y,text) \
 	gui->UG_PutStringSingleLine(sizeX/2 - gui->UG_StringWidth(text)/2, y, text);
 
@@ -37,6 +37,7 @@ bool is_receiving_file = false;
 
 
 
+// logging and error message macros
 #define REMOVE_TEMPFILE() \
 	if( www_image_file ) fclose( www_image_file ); \
 	if( www_image_file ) remove( www_path_temp ); \
@@ -116,7 +117,9 @@ long  www_image_size = 0;
 long  www_app_size = 0;
 
 
-
+/***************************************************************************************************
+// void setup() -- Application Setup Routine
+****************************************************************************************************/
 long lastFrame;
 void setup() {
 	pocuter = new Pocuter();
@@ -373,9 +376,13 @@ void setup() {
 }
 
 
+
+/***************************************************************************************************
+// void loop() -- Application Loop
+****************************************************************************************************/
 void loop() {
 	uint text_y = 0;
-	pocuter->Sleep->disable();
+	pocuter->Sleep->setInactivitySleep( 0, (PocuterSleep::SLEEPTIMER_INTERRUPTS) 0x03 );
 
 	dt = (micros() - lastFrame) / 1000.0 / 1000.0;
 	lastFrame = micros();
@@ -394,7 +401,6 @@ void loop() {
 		REMOVE_TEMPFILE();
 	}
 
-	// update your app here
 	// dt contains the amount of time that has passed since the last update, in seconds
 	UGUI* gui = pocuter->ugui;
 	uint16_t sizeX;

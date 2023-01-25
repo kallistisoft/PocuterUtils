@@ -528,6 +528,7 @@ Usage Notes:
     # help: show full help message
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if( len(args) == 0 and options.show_help ):
+        parser = custom_parser(None);
         parser.print_help();
         sys.exit(1);
 

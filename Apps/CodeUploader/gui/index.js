@@ -139,7 +139,7 @@ function UploadFile() {
         if( xreq.status === 200 ) {
             console.log( xreq.responseText );
             popup_open( 
-                (xreq.responseText.slice(0,2) != 'OK') ? 'ok' : 'warning',
+                xreq.responseText.includes('OK:') ? 'ok' : 'warning',
                 xreq.responseText 
             );
         } else {

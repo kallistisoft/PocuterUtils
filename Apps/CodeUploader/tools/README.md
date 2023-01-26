@@ -18,7 +18,7 @@
 ## Tool Usage
 This tool is designed to be run from the root folder of an Arduino project from a Linux, WSL, or MacOS terminal. In this folder it expects there to be a Pocuter application metadata file having the same name as the folder and ending in ***'.ini'***
 
-This tool is used by being called with one of the four command modes: [***build***](#build-command), [***package***](package-command), [***upload***](upload-command), and [***deploy***](deploy-command).
+This tool is used by being called with one of the four command modes: [***build***](#build-command), [***package***](#package-command), [***upload***](#upload-command), and [***deploy***](#deploy-command).
 
 ## Build Command:
 The ***build command*** compiles the ***'.ino'*** application source code using the ***arduino-cli*** tool. The files are compiled in a temporary folder and the resulting binary is copied into the current folder. This command has the same effect as using the 'Sketch -> Export Compiled Binary' option from the Arduino GUI program.
@@ -95,6 +95,19 @@ The ***deploy command*** executes all three commands in order: ***build***, ***p
 
     # deploy app to server using existing metadata and address from environment
     pocuter-deploy deploy --yes
+```
+
+***
+## Environment Variables
+There are two environment variables that can be set to automatically define often repeated options. These variables are **POCUTER_DEPLOY_PACKAGER** to set the location of the app coversion program, and **POCUTER_DEPLOY_ADDRESS** to set the address or hostname of the 'Code Upload Server'. These variables can persist between sessions by adding them to your shell initialization script (~/.bashrc, ~/.zshrc, etc..):
+
+### Examples:
+```Shell
+    # set the location of the package converter
+    export POCUTER_DEPLOY_PACKAGER=~/PocuterAppConverter.jar
+
+    # set the location of the code upload server
+    export POCUTER_DEPLOY_ADDRESS=192.168.1.100
 ```
 
 ***

@@ -10,6 +10,8 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 
 **[convert-icon.sh](Tools/)**<br/>Utility for converting images to base64 strings suitable for inclusion in Pocuter App metadata files
 
+**[pocuter-deploy](./Apps/CodeUploader/tools/)**<br/>Utility for compiling, packaging, and uploading applications to the [**'Code Upload Server'**](./Apps/CodeUploader/)
+
 
 ***
 
@@ -19,6 +21,8 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 ***
 
 ## Utility Applications
+[**'Code Upload Server'**](./Apps/CodeUploader/)<br/>A Pocuter application for installing applications via the web, features an HTML5 web interface and [command line tool](./Apps/CodeUploader/tools/)
+
 **[SDCardUtil](Apps/SDCardUtil)**<br/>A Pocuter application for mounting/unmounting the sd card while the system is running (*requires pocuter library fork*)
 
 **[KeyboardDemo](Apps/KeyboardDemo)**<br/>A Pocuter application demonstrating advanced usage of the PocuterUtil::Keyboard object

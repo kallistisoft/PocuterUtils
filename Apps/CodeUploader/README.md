@@ -4,7 +4,7 @@
 
 ## Application Features
 - HTML5 Web interface for installing a Pocuter application via Drag & Drop
-- CLI tool [pocuter-deploy](./tools/) for building, packaging, and uploading a Pocuter application
+- CLI tool [**pocuter-deploy**](./tools/) for building, packaging, and uploading Pocuter applications
 - Robust error checking of uploaded files - MD5 hash check, backup creation, and temp file used for uploads
 - Automatically launches uploaded application after file verification
 - Can be used in place of the 'Menu Application' for rapid development cycles

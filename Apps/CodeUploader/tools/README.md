@@ -17,6 +17,9 @@
 - Python3
 - curl
 
+## Example Video
+[![Watch command-line example video](https://img.youtube.com/vi/JJ2Mj7UDr4I/default.jpg)](https://youtu.be/JJ2Mj7UDr4I)
+
 ## Tool Usage
 This tool is designed to be run from the root folder of an Arduino project from a Linux, WSL, or MacOS terminal. In this folder it expects there to be a Pocuter application metadata file having the same name as the folder and ending in ***'.ini'***
 

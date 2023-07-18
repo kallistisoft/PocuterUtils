@@ -11,6 +11,9 @@
 - Automatically launches uploaded application after file verification
 - Can be used in place of the 'Menu Application' for rapid development cycles
 
+## Example Video
+[![Watch the example video](https://img.youtube.com/vi/qk0EkwArBsY/default.jpg)](https://youtu.be/qk0EkwArBsY)
+
 ***
 
 ## Web Application Usage

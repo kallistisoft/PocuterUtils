@@ -1,6 +1,8 @@
 # PocuterUtil :: pocuter-deploy -- Pocuter Application Deployment Tool
 **This command line tool compiles, packages, and uploads a Pocuter application to a ['Code Upload Server'](../).**
 
+***NOTE: The 'pocuter-deploy' tool has been integrated into the [Official Pocuter GitHub Repository](https://github.com/pocuter/pocuter-deploy), all future updates will posted to that repository!***
+
 
 ## Tool Features
 - Options for compiling, packaging, and uploading an application

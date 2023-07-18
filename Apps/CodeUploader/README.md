@@ -1,6 +1,8 @@
 # PocuterUtil :: Code Uploader -- Pocuter Application Upload Server
 **This application exposes a convenient web interface for installing applications onto a Pocuter**
 
+***NOTE: The 'Code Upload Server' has been integrated into the [Official Pocuter GitHub Repository](https://github.com/pocuter/Pocuter-One_Apps/tree/main/CodeUploader), all future updates will posted to that repository!***
+
 
 ## Application Features
 - HTML5 Web interface for installing a Pocuter application via Drag & Drop

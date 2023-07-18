@@ -12,6 +12,8 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 
 **[pocuter-deploy](./Apps/CodeUploader/tools/)**<br/>Utility for compiling, packaging, and uploading applications to the [**'Code Upload Server'**](./Apps/CodeUploader/)
 
+***NOTE: The 'pocuter-deploy' tool has been integrated into the [Official Pocuter GitHub Repository](https://github.com/pocuter/pocuter-deploy), all future updates will posted to that repository!***
+
 
 ***
 
@@ -22,6 +24,8 @@ At this point in time, some of the apps require the [Kallistisoft fork of the Po
 
 ## Utility Applications
 [**'Code Upload Server'**](./Apps/CodeUploader/)<br/>A Pocuter application for installing applications via the web, features an HTML5 web interface and [command line tool](./Apps/CodeUploader/tools/)
+
+***NOTE: The 'Code Upload Server' has been integrated into the [Official Pocuter GitHub Repository](https://github.com/pocuter/Pocuter-One_Apps/tree/main/CodeUploader), all future updates will posted to that repository!***
 
 **[SDCardUtil](Apps/SDCardUtil)**<br/>A Pocuter application for mounting/unmounting the sd card while the system is running (*requires pocuter library fork*)
 
